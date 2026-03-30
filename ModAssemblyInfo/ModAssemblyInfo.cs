@@ -10,8 +10,8 @@ namespace BetterTransitView
     public class ModAssemblyInfo
     {
         public const string Name        = "BetterTransitView";
-        public const string Version     = "3.0.1";
-        public const string Title       = "Traffic Spy";
-        public const string Description = "Provides detailed traffic analysis for selected road segments. Displays route lines color-coded by volume, a breakdown of travel purposes, and also highlights destinations.";
+        public const string Version     = "1.0.0";
+        public const string Title       = "Better Transit View";
+        public const string Description = "A more usable Transit Overview.";
     }
 }

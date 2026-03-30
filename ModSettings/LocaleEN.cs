@@ -33,8 +33,8 @@ namespace BetterTransitView.ModSettings
                 { m_Setting.GetOptionDescLocaleID(nameof(ModSettings.MaxPedestrianTraffic)), "The number of pedestrians passing through a segment required to reach Red when drawing the route lines. Default is 100." },
 
                 // Matches the property name "ToggleToolBinding" in ModSettings.cs
-                { m_Setting.GetOptionLabelLocaleID(nameof(ModSettings.ToggleToolBinding)), "Activate Traffic Spy" },
-                { m_Setting.GetOptionDescLocaleID(nameof(ModSettings.ToggleToolBinding)), $"Press this key to activate Traffic Spy. Once active, click a road or path segment." },
+                { m_Setting.GetOptionLabelLocaleID(nameof(ModSettings.ToggleToolBinding)), "Activate Better Transit View" },
+                { m_Setting.GetOptionDescLocaleID(nameof(ModSettings.ToggleToolBinding)), $"Press this key to activate Better Transit View. Once active, click a road or path segment." },
 
                 // Matches the Action Name in Mod.cs
                 { m_Setting.GetBindingKeyLocaleID(Mod.kToggleActionName), "Activation Key" },

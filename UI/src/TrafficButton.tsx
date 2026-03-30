@@ -14,7 +14,7 @@ export const TrafficButton = () => {
 
         return (
             <>
-                <Tooltip tooltip="Traffic Spy">
+                <Tooltip tooltip="Better Transit View">
                     <Button
                         src="coui://uil/Standard/GenericVehicles.svg"
                         selected={active}

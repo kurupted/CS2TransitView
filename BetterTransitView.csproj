@@ -2,15 +2,15 @@
 
 	<PropertyGroup>
 		<Configurations>Debug;Release</Configurations>
-		<Title>Traffic Spy</Title>
-		<Version>3.0.1</Version>
+		<Title>Better Transit View</Title>
+		<Version>1.0.0</Version>
 		<Copyright>Copyright © 2026</Copyright>
 	
 		<!--The file where mod information which is required for publishing mod on PDX mods are stored-->
 		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
 		<DefaultItemExcludes>UI\node_modules\**;$(DefaultItemExcludes)</DefaultItemExcludes>
-		<AssemblyTitle>Traffic Spy</AssemblyTitle>
-		<Description>Provides detailed traffic analysis for selected road segments. Displays route lines color-coded by volume, a breakdown of travel purposes, and also highlights destinations.</Description>
+		<AssemblyTitle>Better Transit View</AssemblyTitle>
+		<Description>A more usable Transit Overview.</Description>
 	</PropertyGroup>
 	
 	<!--Imports must be after PropertyGroup block-->

@@ -4,32 +4,27 @@
 
 <Publish>
     <!-- Mod ID must be 0 for publishing a mod for the first time.  Mod ID must be set in order to update an existing mod. -->
-    <ModId Value="128566" />
+    <ModId Value="0" />
 
     <!-- Name of the mod to display to players.  Copied from assembly Title. -->
-    <DisplayName Value="Traffic Spy" />
+    <DisplayName Value="Better Transit View" />
 
     <!-- Short description of the mod.  Copied from assembly Description. -->
-    <ShortDescription Value="Provides detailed traffic analysis for selected road segments. Displays route lines color-coded by volume, a breakdown of travel purposes, and also highlights destinations." />
+    <ShortDescription Value="A more usable Transit Overview." />
 
     <!-- Long description of the mod.  Copied from ReadMe.md file.  Supports minimal markdown subset. -->
     <LongDescription>
-# Traffic Spy
-Provides detailed traffic analysis for selected road segments. Displays route lines color-coded by volume, a breakdown of travel purposes, and also highlights destinations.
+# Better Transit View
+A more usable Transit Overview for Cities II.
 ## Features:
-- Route Lines: Draws lines indicating the routes that each agent will take, similar to the vanilla system but with color-coding to indicate volume, and it works in combination with the various filters.
-- Filtering Options: Isolate one side of a two-way road, filter to specific travel purposes, or limit analysis based on agents' distance from the selected path.
-- Destination Visualization: Highlights destination buildings.
-- Travel Purpose Summary: View agent counts, grouped by their travel purpose (e.g., commuting, cargo delivery, etc).
-- In addition to roads and pedestrian paths, you can analyze bus stops, subway stations, train stations, and ferry stops.
-- When selecting a road you can exclude the pedestrians waiting at an attached bus stop, or analyze only the transit passengers. For stations, you can analyze each individual stop/platform, or all together.
-## How to Use:
-Click the Traffic Spy icon, and then click a road/path segment, or a transit structure.
+- Compact design.
+- View all of the same data as the vanilla transit overview.
+- Use route tools while the UI is open. You can finally hide overlapping lines so you can edit the route you want.
+- Toggle on or off a gray world map.
+- Route lines are drawn much thicker as you zoom out, so you can see an overview of the routes across your map.
+- Where two lines share the same stop, an indicator is drawn with the lines' colors.
 ## Tips:
-- Except at short distances, the routes of cims are not lane-specific.
-- When analyzing an intersection, you can choose "Lane Data Only" to see only the routes of vehicles who have chosen specific lanes.
-- Bikes count as vehicles.
-- Check out my other mod, Radius Delete :) 
+- Check out my other mods, Traffic Spy and Radius Delete :) 
 ## Removal:
 This mod is safe to remove and doesn't add data to your save files.
 </LongDescription>
@@ -39,25 +34,18 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Screenshot.  Copied from Screenshots folder.  Include no spaces in file names.  Max file size is 2.1MB.  Can be set multiple times. -->
     <Screenshot Value="Properties\Screenshots\10_thumbnail.png" />
-    <Screenshot Value="Properties\Screenshots\20_routes.png" />
-    <Screenshot Value="Properties\Screenshots\22_routes_intersection.png" />
-    <Screenshot Value="Properties\Screenshots\30_destinations.png" />
-    <Screenshot Value="Properties\Screenshots\40_infopanel.png" />
-    <Screenshot Value="Properties\Screenshots\50_oneside.png" />
-    <Screenshot Value="Properties\Screenshots\60_transit.png" />
-    <Screenshot Value="Properties\Screenshots\70_peds.png" />
-    <Screenshot Value="Properties\Screenshots\80_transit1.png" />
-    <Screenshot Value="Properties\Screenshots\80_transit2.png" />
+    <Screenshot Value="Properties\Screenshots\20_transit1.png" />
+    <Screenshot Value="Properties\Screenshots\30_transit2.png" />
 
 
     <!-- Tag.  Can be set multiple times. -->
     <Tag Value="Code Mod" />
 
     <!-- Link to the forum post where the mod can be discussed. -->
-    <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/traffic-spy.1884568/" />
+    <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/traffic-spy.1884568-todo/" />
 
     <!-- Version of the mod.  Copied from assembly Version. -->
-    <ModVersion Value="3.0.1" />
+    <ModVersion Value="1.0.0" />
 
     <!-- Recommended version of the base game to use the mod. -->
     <GameVersion Value="1.5.*" />
@@ -71,15 +59,12 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Change log.  Copied from ChangeLog.md file.  Supports minimal markdown subset. -->
     <ChangeLog>
-- Now captures vehicles that are close to the selected road segment and have switched to lane-specific pathing.
-- You can now analyze intersections (nodes).
-- Switched to custom outlines so that highlighted peds are visible on selected roads/transit.
-- With Vehicle filter on, now we only draw routes on vehicle lanes, even if the cim's route also includes eg walking to their car. Likewise for the Pedestrian filter. Counts however will still include cims with multi-mode routes.
+- Initial release.
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->
     <!-- Supported types are discord, github, youtube, twitch, x, paypal, patreon, buymeacoffee, kofi, crowdin, gitlab, gofundme. -->
-    <ExternalLink Type="github" Url="https://github.com/kurupted/CS2BetterTransitView" />
+    <ExternalLink Type="github" Url="https://github.com/kurupted/CS2TransitView" />
 
     <!-- Access Control Level.  Supported values: Public, Private, Unlisted -->
     <AccessLevel Value="Public" />
