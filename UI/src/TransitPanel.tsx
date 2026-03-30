@@ -314,7 +314,6 @@ export const TransitPanel = () => {
 
         // Tell the C# backend to update the visibility
         trigger("BetterTransitView", "setAllLinesVisible", targetState);
-        trigger("BetterTransitView", "setShowStopsAndStations", targetState);
     };
 
     return (
