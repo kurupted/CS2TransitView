@@ -37,16 +37,12 @@ namespace BetterTransitView
 
             AssetDatabase.global.LoadSettings(nameof(BetterTransitView), m_Setting, new ModSettings.ModSettings(this));
 
-            updateSystem.UpdateAt<BetterTransitViewToolSystem>(SystemUpdatePhase.ToolUpdate);
-            
             updateSystem.UpdateAt<BetterTransitView.Systems.TrafficUISystem>(SystemUpdatePhase.UIUpdate);
-            updateSystem.UpdateAt<BetterTransitView.Systems.TrafficHighlightSystem>(SystemUpdatePhase.ToolUpdate);
             
             updateSystem.UpdateAt<SimpleOverlayRendererSystem>(SystemUpdatePhase.Rendering);
-            updateSystem.UpdateAt<TrafficRouteSystem>(SystemUpdatePhase.Rendering);
             
             // Register the Color System so the Harmony patch intercepts the colors
-            updateSystem.UpdateAt<BetterTransitView.Systems.TrafficColorSystem>(SystemUpdatePhase.UIUpdate);
+            updateSystem.UpdateAt<BetterTransitView.Systems.MapColorSystem>(SystemUpdatePhase.UIUpdate);
         }
 
         public void OnDispose()

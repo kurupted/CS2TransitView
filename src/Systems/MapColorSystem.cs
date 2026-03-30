@@ -12,10 +12,9 @@ using Unity.Entities;
 
 namespace BetterTransitView.Systems
 {
-    // CRITICAL FIX: Run in the Presentation System Group so the vanilla game doesn't overwrite us!
     [UpdateInGroup(typeof(Unity.Entities.PresentationSystemGroup))]
     [UpdateAfter(typeof(ObjectColorSystem))] 
-    public partial class TrafficColorSystem : GameSystemBase
+    public partial class MapColorSystem : GameSystemBase
     {
         private TrafficUISystem m_TrafficUISystem;
         private EntityQuery m_TransitBuildingQuery;

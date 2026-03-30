@@ -1284,68 +1284,6 @@ namespace BetterTransitView.Systems
             JobHandle pathJobHandle = default;
             NativeHashSet<Entity> targets = default; 
             
-            if (usePathBasedAnalysis && !isDirectStop && !isStation)
-            {
-                Mod.log.Info("BetterTransitView: Starting Path-Based Analysis");
-                
-                // Pass directionMode to GetTargetEntities
-                targets = GetTargetEntities(selectedSegment, Allocator.TempJob, this.directionMode);
-                if (this.directionMode != 0) {
-                    NativeArray<Entity> targetArray = targets.ToNativeArray(Allocator.Temp);
-                    foreach (var entity in targetArray) {
-                        if (entity != selectedSegment) AnalyzedLanes.Add(entity);
-                    }
-                    targetArray.Dispose();
-                } else {
-                    AnalyzedLanes.Add(selectedSegment);
-                }
-
-                // for those on the selected segment
-                PathActivityJob pathJob = new PathActivityJob
-                {
-                    targets = targets,
-                    checkPathElements = (this.rangeMode != 0),
-                    travelPurposeLookup = SystemAPI.GetComponentLookup<TravelPurpose>(true),
-                    targetLookup = SystemAPI.GetComponentLookup<Target>(true),
-                    householdLookup = SystemAPI.GetComponentLookup<Household>(true),
-                    householdMemberLookup = SystemAPI.GetComponentLookup<HouseholdMember>(true),
-                    workerLookup = SystemAPI.GetComponentLookup<Worker>(true),
-                    studentLookup = SystemAPI.GetComponentLookup<Game.Citizens.Student>(true),
-                    creatureResidentLookup = SystemAPI.GetComponentLookup<Game.Creatures.Resident>(true),
-                    touristHouseholdLookup = SystemAPI.GetComponentLookup<TouristHousehold>(true), 
-                    propertyRenterLookup = SystemAPI.GetComponentLookup<PropertyRenter>(true),
-                    ownerLookup = SystemAPI.GetComponentLookup<Owner>(true),
-                    buildingLookup = SystemAPI.GetComponentLookup<Building>(true),
-                    currentVehicleLookup = SystemAPI.GetComponentLookup<CurrentVehicle>(true),
-                    currentTransportLookup = SystemAPI.GetComponentLookup<CurrentTransport>(true),
-                    taxiLookup = SystemAPI.GetComponentLookup<Game.Vehicles.Taxi>(true),
-                    passengerLookup = SystemAPI.GetBufferLookup<Passenger>(true),
-                    deliveryTruckLookup = SystemAPI.GetComponentLookup<Game.Vehicles.DeliveryTruck>(true),
-                    cargoTransportLookup = SystemAPI.GetComponentLookup<Game.Vehicles.CargoTransport>(true),
-                    publicTransportLookup = SystemAPI.GetComponentLookup<Game.Vehicles.PublicTransport>(true),
-                    personalCarLookup = SystemAPI.GetComponentLookup<Game.Vehicles.PersonalCar>(true),
-                    hearseLookup = SystemAPI.GetComponentLookup<Game.Vehicles.Hearse>(true),
-                    garbageTruckLookup = SystemAPI.GetComponentLookup<Game.Vehicles.GarbageTruck>(true),
-                    policeCarLookup = SystemAPI.GetComponentLookup<Game.Vehicles.PoliceCar>(true),
-                    fireEngineLookup = SystemAPI.GetComponentLookup<Game.Vehicles.FireEngine>(true),
-                    ambulanceLookup = SystemAPI.GetComponentLookup<Game.Vehicles.Ambulance>(true),
-                    postVanLookup = SystemAPI.GetComponentLookup<Game.Vehicles.PostVan>(true),
-                    maintenanceVehicleLookup = SystemAPI.GetComponentLookup<Game.Vehicles.MaintenanceVehicle>(true),
-                    carLaneLookup = SystemAPI.GetComponentLookup<CarCurrentLane>(true),
-                    humanLaneLookup = SystemAPI.GetComponentLookup<HumanCurrentLane>(true),
-                    vehicleLookup = SystemAPI.GetComponentLookup<Game.Vehicles.Vehicle>(true),
-                    trainLaneLookup = SystemAPI.GetComponentLookup<Game.Vehicles.TrainCurrentLane>(true),
-                    watercraftLaneLookup = SystemAPI.GetComponentLookup<Game.Vehicles.WatercraftCurrentLane>(true),
-                    carNavigationLaneLookup = SystemAPI.GetBufferLookup<CarNavigationLane>(true),
-                    results = resultsQueue.AsParallelWriter()
-                };
-                pathJobHandle = pathJob.ScheduleParallel(pathOwnerQuery, default);
-            }
-
-            if (shouldAnalyzeStops) 
-            {
-                waitingJobHandle.Complete();
-            }
             debugList.Dispose();
 
             if (targets.IsCreated) pathJobHandle.Complete();
