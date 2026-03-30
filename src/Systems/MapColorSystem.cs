@@ -16,14 +16,14 @@ namespace BetterTransitView.Systems
     [UpdateAfter(typeof(ObjectColorSystem))] 
     public partial class MapColorSystem : GameSystemBase
     {
-        private TrafficUISystem m_TrafficUISystem;
+        private TransitUISystem _mTransitUISystem;
         private EntityQuery m_TransitBuildingQuery;
         private EntityQuery m_ActiveInfomodeQuery;
 
         protected override void OnCreate()
         {
             base.OnCreate();
-            m_TrafficUISystem = World.GetOrCreateSystemManaged<TrafficUISystem>();
+            _mTransitUISystem = World.GetOrCreateSystemManaged<TransitUISystem>();
 
             m_TransitBuildingQuery = GetEntityQuery(new EntityQueryDesc
             {
@@ -45,7 +45,7 @@ namespace BetterTransitView.Systems
 
         protected override void OnUpdate()
         {
-            if (!m_TrafficUISystem.IsTransitPanelActive) return;
+            if (!_mTransitUISystem.IsTransitPanelActive) return;
 
             byte stationIndex = 0;
             bool foundStation = false;

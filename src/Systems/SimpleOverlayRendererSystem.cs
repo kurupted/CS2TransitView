@@ -18,7 +18,7 @@ namespace BetterTransitView.Systems
     public partial class SimpleOverlayRendererSystem : SystemBase
     {
         private OverlayRenderSystem m_OverlayRenderSystem;
-        private TrafficUISystem m_TrafficUISystem;
+        private TransitUISystem _mTransitUISystem;
         private CameraUpdateSystem m_CameraUpdateSystem; 
         private EntityQuery m_TransitLinesQuery;
 
@@ -26,7 +26,7 @@ namespace BetterTransitView.Systems
         {
             base.OnCreate();
             m_OverlayRenderSystem = World.GetExistingSystemManaged<OverlayRenderSystem>();
-            m_TrafficUISystem = World.GetOrCreateSystemManaged<TrafficUISystem>();
+            _mTransitUISystem = World.GetOrCreateSystemManaged<TransitUISystem>();
             m_CameraUpdateSystem = World.GetExistingSystemManaged<CameraUpdateSystem>();
 
             m_TransitLinesQuery = GetEntityQuery(new EntityQueryDesc
@@ -45,10 +45,10 @@ namespace BetterTransitView.Systems
 
         protected override void OnUpdate()
         {
-            if (m_TrafficUISystem == null || !m_TrafficUISystem.IsTransitPanelActive) return;
+            if (_mTransitUISystem == null || !_mTransitUISystem.IsTransitPanelActive) return;
 
-            var hiddenSet = new NativeHashSet<Entity>(TrafficUISystem.HiddenCustomRoutes.Count, Allocator.TempJob);
-            foreach (var e in TrafficUISystem.HiddenCustomRoutes) hiddenSet.Add(e);
+            var hiddenSet = new NativeHashSet<Entity>(TransitUISystem.HiddenCustomRoutes.Count, Allocator.TempJob);
+            foreach (var e in TransitUISystem.HiddenCustomRoutes) hiddenSet.Add(e);
 
             OverlayRenderSystem.Buffer buffer = m_OverlayRenderSystem.GetBuffer(out JobHandle deps);
 
@@ -69,7 +69,7 @@ namespace BetterTransitView.Systems
                 HiddenRoutes = hiddenSet,
                 WaypointBufferType = SystemAPI.GetBufferTypeHandle<Game.Routes.RouteWaypoint>(true),
                 TransformLookup = SystemAPI.GetComponentLookup<Game.Objects.Transform>(true),
-                DrawStops = TrafficUISystem.ShowStopsAndStations,
+                DrawStops = TransitUISystem.ShowStopsAndStations,
                 ConnectedLookup = SystemAPI.GetComponentLookup<Game.Routes.Connected>(true),
                 ZoomLevel = m_CameraUpdateSystem.zoom,
                 
@@ -87,7 +87,7 @@ namespace BetterTransitView.Systems
                 stopColors = stopColors,
                 stopPositions = stopPositions,
                 zoomLevel = m_CameraUpdateSystem.zoom,
-                drawStops = TrafficUISystem.ShowStopsAndStations
+                drawStops = TransitUISystem.ShowStopsAndStations
             };
 
             // Pass 2: Draw the merged nodes

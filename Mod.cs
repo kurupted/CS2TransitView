@@ -37,7 +37,7 @@ namespace BetterTransitView
 
             AssetDatabase.global.LoadSettings(nameof(BetterTransitView), m_Setting, new ModSettings.ModSettings(this));
 
-            updateSystem.UpdateAt<BetterTransitView.Systems.TrafficUISystem>(SystemUpdatePhase.UIUpdate);
+            updateSystem.UpdateAt<BetterTransitView.Systems.TransitUISystem>(SystemUpdatePhase.UIUpdate);
             
             updateSystem.UpdateAt<SimpleOverlayRendererSystem>(SystemUpdatePhase.Rendering);
             

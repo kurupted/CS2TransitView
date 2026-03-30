@@ -18,7 +18,7 @@ namespace BetterTransitView.Systems
     }
 
     [UpdateAfter(typeof(ToolSystem))]
-    public partial class TrafficUISystem : InfoSectionBase
+    public partial class TransitUISystem : InfoSectionBase
     {
         private ToolSystem m_ToolSystem;
         private Game.UI.InGame.InfoviewsUISystem m_InfoviewsUISystem;
@@ -191,7 +191,7 @@ namespace BetterTransitView.Systems
             }));
         }
 
-        protected override string group => "BetterTransitView.Systems.TrafficUISystem";
+        protected override string group => "BetterTransitView.Systems.TransitUISystem";
         protected override void Reset() { }
         protected override void OnProcess() { }
         public override void OnWriteProperties(IJsonWriter writer) { }
