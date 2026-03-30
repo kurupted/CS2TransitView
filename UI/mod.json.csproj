@@ -1,0 +1,41 @@
+<Project>
+	<!-- Create the mod.json file using assembly info. -->
+	<Target Name="BuildModJSON" BeforeTargets="BeforeCompile;CoreCompile" Inputs="$(MSBuildAllProjects)" Outputs="$(IntermediateOutputPath)GeneratedFile.cs">
+		<!-- Define mod.json file. -->
+		<PropertyGroup>
+			<ModJsonFile>$(ProjectDir)UI\mod.json</ModJsonFile>
+		</PropertyGroup>
+
+		<!-- mod.json file must already exist. -->
+		<Error Condition="!$([System.IO.File]::Exists($(ModJsonFile)))" Code="MJ0001"
+            Text="Error building 'mod.json' file -- file not found '$(ModJsonFile)'." />
+
+		<!-- Read existing mod.json file lines. -->
+		<ReadLinesFromFile File="$(ModJsonFile)">
+			<Output TaskParameter="Lines" PropertyName="ModJsonFileLines"/>
+		</ReadLinesFromFile>
+
+		<PropertyGroup>
+			<!-- Get author line from exising mod.json file line number 2 (zero based). -->
+			<AuthorLine>$([System.String]::Copy($(ModJsonFileLines)).Split(';')[2])</AuthorLine>
+
+			<!-- Recreate the mod.json file contents using assembly info and author line. -->
+			<GeneratedText>
+				<![CDATA[
+{
+    "id": "$(AssemblyName)",
+    $(AuthorLine)
+    "version": "$(Version)",
+    "dependencies": []
+}
+				]]>
+			</GeneratedText>
+		</PropertyGroup>
+
+		<!-- Write the generated text to the mod.json file. -->
+		<ItemGroup>
+			<FileWrites Include="$(ModJsonFile)" />
+		</ItemGroup>
+		<WriteLinesToFile Lines="$(GeneratedText)" File="$(ModJsonFile)" WriteOnlyWhenDifferent="true" Overwrite="true" />
+	</Target>
+</Project>

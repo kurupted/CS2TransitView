@@ -1,0 +1,4 @@
+- Now captures vehicles that are close to the selected road segment and have switched to lane-specific pathing.
+- You can now analyze intersections (nodes).
+- Switched to custom outlines so that highlighted peds are visible on selected roads/transit.
+- With Vehicle filter on, now we only draw routes on vehicle lanes, even if the cim's route also includes eg walking to their car. Likewise for the Pedestrian filter. Counts however will still include cims with multi-mode routes.

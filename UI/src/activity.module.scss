@@ -1,0 +1,79 @@
+
+.activityPanel {
+    display: flex;
+    flex-direction: column;
+    color: rgba(255, 255, 255, 0.9);
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1); /* Subtle separator */
+}
+
+.title {
+    text-transform: uppercase;
+    font-size: 14rem; /* Standard game header size */
+    color: rgba(255, 255, 255, 0.5); /* Muted header color */
+    margin-bottom: 4rem;
+    letter-spacing: 1rem;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    font-size: 16rem;
+}
+
+.count {
+    font-weight: 600;
+    color: #65D8E8; /* Keep the cyan for numbers */
+}
+
+.panelContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 5px;
+}
+
+// NEW STYLES
+.stopsSection {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+.sectionTitle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stopsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.stopButton {
+    background-color: rgba(30, 40, 50, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #e0e0e0;
+    padding: 4px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.1s;
+
+    &:hover {
+        background-color: rgba(50, 150, 255, 0.4);
+        border-color: rgba(50, 150, 255, 0.8);
+        color: #fff;
+    }
+
+    &:active {
+        background-color: rgba(50, 150, 255, 0.6);
+    }
+}
+
