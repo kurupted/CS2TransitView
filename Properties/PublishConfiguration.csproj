@@ -63,7 +63,7 @@ $(Screenshot00)$(Screenshot01)$(Screenshot02)$(Screenshot03)$(Screenshot04)$(Scr
     <Tag Value="Code Mod" />
 
     <!-- Link to the forum post where the mod can be discussed. -->
-    <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/traffic-spy.1884568-todo/" />
+    <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/better-transit-view.1914977/" />
 
     <!-- Version of the mod.  Copied from assembly Version. -->
     <ModVersion Value="$(Version)" />
