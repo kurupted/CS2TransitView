@@ -1,13 +1,5 @@
-﻿DONE:
-
-
+﻿
 - make subway routes show above ground somehow
 
-show miles
-
-
-TO DO
-
-
-- stray route lines eg on road shoulders etc (sometimes this is cars being parked, but i've seen it on highways)
+- use miles as applicable
 

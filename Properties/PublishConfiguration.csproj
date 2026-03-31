@@ -72,7 +72,7 @@ $(Screenshot00)$(Screenshot01)$(Screenshot02)$(Screenshot03)$(Screenshot04)$(Scr
     <GameVersion Value="1.5.*" />
 
     <!-- Dependency for the mod.  Can be set multiple times. -->
-    <Dependency Id="74417" />
+    <Dependency Id="" />
 
     <!-- Required DLC.  Can be set multiple times. -->
     <!-- Supported values are "Landmark Buildings", "San Fransisco Set", "Beach Properties", "Urban Promenades", "Modern Architecture" -->

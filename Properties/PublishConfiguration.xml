@@ -17,11 +17,10 @@
 # Better Transit View
 A more usable Transit Overview for Cities II.
 ## Features:
-- Compact design.
-- View all of the same data as the vanilla transit overview.
-- Use route tools while the UI is open. You can finally hide overlapping lines so you can edit the route you want.
+- Use route tools while the UI is open, allowing you to control the visibility of lines while you work. No more fighting with overlapping lines!
+- A more compact design, with all of the same data as the vanilla transit overview.
 - Toggle on or off a gray world map.
-- Route lines are drawn much thicker as you zoom out, so you can see an overview of the routes across your map.
+- As you zoom out, route lines are drawn much thicker, so you can see an overview of routes across your map.
 - Where two lines share the same stop, an indicator is drawn with the lines' colors.
 ## Tips:
 - Check out my other mods, Traffic Spy and Radius Delete :) 
@@ -34,15 +33,19 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Screenshot.  Copied from Screenshots folder.  Include no spaces in file names.  Max file size is 2.1MB.  Can be set multiple times. -->
     <Screenshot Value="Properties\Screenshots\10_thumbnail.png" />
-    <Screenshot Value="Properties\Screenshots\20_transit1.png" />
-    <Screenshot Value="Properties\Screenshots\30_transit2.png" />
+    <Screenshot Value="Properties\Screenshots\20_main.png" />
+    <Screenshot Value="Properties\Screenshots\30_stops1.png" />
+    <Screenshot Value="Properties\Screenshots\31_stops2.png" />
+    <Screenshot Value="Properties\Screenshots\40_tool.png" />
+    <Screenshot Value="Properties\Screenshots\41_tool2.png" />
+    <Screenshot Value="Properties\Screenshots\50_cargo.png" />
 
 
     <!-- Tag.  Can be set multiple times. -->
     <Tag Value="Code Mod" />
 
     <!-- Link to the forum post where the mod can be discussed. -->
-    <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/traffic-spy.1884568-todo/" />
+    <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/better-transit-view.1914977/" />
 
     <!-- Version of the mod.  Copied from assembly Version. -->
     <ModVersion Value="1.0.0" />
@@ -51,7 +54,7 @@ This mod is safe to remove and doesn't add data to your save files.
     <GameVersion Value="1.5.*" />
 
     <!-- Dependency for the mod.  Can be set multiple times. -->
-    <Dependency Id="74417" />
+    <Dependency Id="" />
 
     <!-- Required DLC.  Can be set multiple times. -->
     <!-- Supported values are "Landmark Buildings", "San Fransisco Set", "Beach Properties", "Urban Promenades", "Modern Architecture" -->

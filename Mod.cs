@@ -42,7 +42,7 @@ namespace BetterTransitView
             updateSystem.UpdateAt<SimpleOverlayRendererSystem>(SystemUpdatePhase.Rendering);
             
             // Register the Color System so the Harmony patch intercepts the colors
-            updateSystem.UpdateAt<BetterTransitView.Systems.MapColorSystem>(SystemUpdatePhase.UIUpdate);
+            //updateSystem.UpdateAt<BetterTransitView.Systems.MapColorSystem>(SystemUpdatePhase.UIUpdate);
         }
 
         public void OnDispose()

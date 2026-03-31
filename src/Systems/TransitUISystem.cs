@@ -34,6 +34,7 @@ namespace BetterTransitView.Systems
         private EntityQuery m_TransportLinePrefabQuery;
         private Game.Prefabs.InfoviewPrefab m_CustomInfoview;
         private Entity m_CustomInfoviewEntity = Entity.Null;
+        private EntityQuery m_ActiveInfomodeQuery;
         
         // State
         public bool IsTransitPanelActive => this.showTransitPanelBinding?.value ?? false;
@@ -42,6 +43,7 @@ namespace BetterTransitView.Systems
         private bool m_ModeChangeRequested = false;
         private int m_TransitUpdateFrame = 0;
         private bool m_TransitLinesDirty = false;
+        private bool m_WasToggleKeyDown = false;
 
         // Public Statics for the Render Jobs
         public static HashSet<Entity> HiddenCustomRoutes = new HashSet<Entity>();
@@ -78,6 +80,14 @@ namespace BetterTransitView.Systems
                 All = new ComponentType[] {
                     ComponentType.ReadOnly<Game.Prefabs.TransportLineData>(),
                     ComponentType.ReadOnly<Game.Prefabs.PrefabData>()
+                }
+            });
+            
+            m_ActiveInfomodeQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new ComponentType[] {
+                    ComponentType.ReadOnly<Game.Prefabs.InfoviewBuildingStatusData>(),
+                    ComponentType.ReadOnly<Game.Prefabs.InfomodeActive>()
                 }
             });
 
@@ -196,11 +206,26 @@ namespace BetterTransitView.Systems
         protected override void OnProcess() { }
         public override void OnWriteProperties(IJsonWriter writer) { }
 
+        
         protected override void OnUpdate()
         {
             if (!Enabled) Enabled = true;
-            
-            // 1. Process Mode Changes Safely on the Main Thread
+
+            // 1. Check for Hotkey Press
+            if (Mod.m_ToggleAction != null)
+            {
+                bool isPressed = Mod.m_ToggleAction.IsPressed();
+                // Only trigger if pressed NOW but wasn't pressed LAST frame
+                if (isPressed && !m_WasToggleKeyDown)
+                {
+                    // Toggle the panel based on its current state
+                    m_PendingTransitMode = this.IsTransitPanelActive ? "none" : "custom";
+                    m_ModeChangeRequested = true;
+                }
+                m_WasToggleKeyDown = isPressed;
+            }
+
+            // 2. Process Mode Changes Safely on the Main Thread
             if (m_ModeChangeRequested)
             {
                 if (m_PendingTransitMode == "none") DeactivateTransitMode();
@@ -208,10 +233,35 @@ namespace BetterTransitView.Systems
                 m_ModeChangeRequested = false;
             }
 
-            // 2. Transit Panel Logic Loop
+            // 3. Transit Panel Logic Loop
             if (this.IsTransitPanelActive)
             {
                 SyncVanillaVisibilityToUI();
+
+                // Keep the Gray Map checkbox synced if the user manually closes the vanilla infoview
+                if (m_CustomInfoviewEntity != Entity.Null)
+                {
+                    bool isActuallyGray = false;
+                    
+                    if (!m_ActiveInfomodeQuery.IsEmptyIgnoreFilter)
+                    {
+                        using var statusDatas = m_ActiveInfomodeQuery.ToComponentDataArray<Game.Prefabs.InfoviewBuildingStatusData>(Unity.Collections.Allocator.Temp);
+                        foreach (var status in statusDatas)
+                        {
+                            if ((int)status.m_Type == (int)BetterTransitViewStatusType.Stations)
+                            {
+                                isActuallyGray = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (ShowInfoviewBackground != isActuallyGray)
+                    {
+                        ShowInfoviewBackground = isActuallyGray;
+                        this.showInfoviewBackgroundBinding.Update(isActuallyGray);
+                    }
+                }
                 
                 m_TransitUpdateFrame++;
                 // Update data every 60 frames OR instantly if the dirty flag was tripped by a click
