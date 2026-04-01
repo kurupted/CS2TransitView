@@ -5,13 +5,58 @@ using Game.Rendering;
 using Game.Routes;
 using Game.Pathfind; 
 using Unity.Burst;
+using Unity.Burst.Intrinsics; // Required for v128
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Colossal.Mathematics; // Required for Bezier4x3 and MathUtils
 
 namespace BetterTransitView.Jobs
 {
+    // PASS 1: TALLY OVERLAPPING ROUTES
+    [BurstCompile]
+    public struct TallySharedSegmentsJob : IJobChunk
+    {
+        [ReadOnly] public EntityTypeHandle EntityHandle;
+        [ReadOnly] public BufferTypeHandle<RouteSegment> SegmentBufferType;
+        [ReadOnly] public BufferLookup<PathElement> PathElementLookup;
+        [ReadOnly] public ComponentTypeHandle<HiddenRoute> HiddenRouteType;
+
+        public NativeParallelMultiHashMap<Entity, Entity>.ParallelWriter SegmentToRouteMap;
+
+        public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
+        {
+            if (chunk.Has(ref HiddenRouteType)) return;
+
+            NativeArray<Entity> entities = chunk.GetNativeArray(EntityHandle);
+            BufferAccessor<RouteSegment> segmentAccess = chunk.GetBufferAccessor(ref SegmentBufferType);
+
+            for (int i = 0; i < chunk.Count; i++)
+            {
+                Entity routeEntity = entities[i];
+                DynamicBuffer<RouteSegment> segments = segmentAccess[i];
+
+                // Loop through the segments of the route
+                for (int j = 0; j < segments.Length; j++)
+                {
+                    Entity segmentEntity = segments[j].m_Segment;
+                    
+                    // Look up the path elements on each segment
+                    if (PathElementLookup.TryGetBuffer(segmentEntity, out DynamicBuffer<PathElement> path))
+                    {
+                        for (int p = 0; p < path.Length; p++)
+                        {
+                            Entity targetElement = path[p].m_Target; // The actual road curve entity
+                            SegmentToRouteMap.Add(targetElement, routeEntity);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // PASS 2: RENDER THE ROUTES
     [BurstCompile]
     public struct RenderTransitLineOverlayJob : IJobChunk
     {
@@ -34,11 +79,14 @@ namespace BetterTransitView.Jobs
         [ReadOnly] public ComponentLookup<TransportLineData> TransportLineDataLookup;
         public float ZoomLevel; 
         
-        // Output Containers
+        // --- Output Containers ---
         public NativeParallelMultiHashMap<Entity, UnityEngine.Color> StopColors;
         public NativeHashMap<Entity, float3> StopPositions;
+        
+        // --- Ribbon Data Map ---
+        [ReadOnly] public NativeParallelMultiHashMap<Entity, Entity> SharedSegmentsMap;
 
-        public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in Unity.Burst.Intrinsics.v128 chunkEnabledMask)
+        public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
         {
             NativeArray<Entity> entities = chunk.GetNativeArray(EntityType);
             NativeArray<Game.Routes.Color> colors = chunk.GetNativeArray(ref ColorType);
@@ -53,6 +101,9 @@ namespace BetterTransitView.Jobs
             float baseWidth = 4.0f;
             float maxWidth = baseWidth * 12f; 
             float thickness = math.lerp(baseWidth, maxWidth, normalizedZoom);
+            
+            // Set ribbon width slightly narrower than thickness so they snug up together nicely
+            float ribbonWidth = thickness * 0.85f; 
 
             for (int i = 0; i < chunk.Count; i++)
             {
@@ -82,15 +133,77 @@ namespace BetterTransitView.Jobs
                     {
                         for (int k = 0; k < path.Length; k++)
                         {
-                            if (CurveLookup.TryGetComponent(path[k].m_Target, out Curve curve))
+                            Entity targetElement = path[k].m_Target;
+                            if (CurveLookup.TryGetComponent(targetElement, out Curve curveComponent))
                             {
-                                overlayBuffer.DrawCurve(renderColor, curve.m_Bezier, thickness, new Unity.Mathematics.float2(0, 1));
+                                Bezier4x3 myCurve = curveComponent.m_Bezier;
+                                
+                                // --- RIBBON MATH ---
+                                Unity.Collections.FixedList512Bytes<Entity> uniqueRoutes = new Unity.Collections.FixedList512Bytes<Entity>();
+                                
+                                if (SharedSegmentsMap.TryGetFirstValue(targetElement, out Entity routeOnSegment, out var iterator))
+                                {
+                                    do
+                                    {
+                                        bool exists = false;
+                                        for (int u = 0; u < uniqueRoutes.Length; u++) {
+                                            if (uniqueRoutes[u] == routeOnSegment) { exists = true; break; }
+                                        }
+                                        if (!exists) uniqueRoutes.Add(routeOnSegment);
+                                        
+                                    } while (SharedSegmentsMap.TryGetNextValue(out routeOnSegment, ref iterator));
+                                }
+
+                                int totalLines = uniqueRoutes.Length;
+
+                                // Dynamic thickness scaling!
+                                float scaleFactor = 1.0f;
+                                if (totalLines > 1) 
+                                {
+                                    // 2 lines = 70%, 3 lines = even less, capped at a minimum of 35% thickness
+                                    scaleFactor = math.max(0.35f, 1.0f - ((totalLines - 1) * 0.30f)); 
+                                }
+                                
+                                // Scale both the visual thickness and the mathematical offset width
+                                float currentThickness = thickness * scaleFactor;
+                                float currentRibbonWidth = ribbonWidth * scaleFactor;
+
+                                if (totalLines > 1)
+                                {
+                                    int myIndex = 0;
+                                    for (int u = 0; u < totalLines; u++)
+                                    {
+                                        if (uniqueRoutes[u].Index < routeEntity.Index) 
+                                        {
+                                            myIndex++;
+                                        }
+                                    }
+
+                                    // Use the dynamically scaled ribbon width so they stay snug
+                                    float offsetAmount = (myIndex - (totalLines - 1) / 2f) * currentRibbonWidth;
+
+                                    float3 tangentA = MathUtils.Tangent(myCurve, 0f);
+                                    float3 tangentD = MathUtils.Tangent(myCurve, 1f);
+
+                                    float3 up = new float3(0, 1, 0);
+                                    float3 rightA = math.normalizesafe(math.cross(up, tangentA));
+                                    float3 rightD = math.normalizesafe(math.cross(up, tangentD));
+                                    float3 rightMid = math.normalizesafe(rightA + rightD);
+
+                                    myCurve.a += rightA * offsetAmount;
+                                    myCurve.b += rightMid * offsetAmount;
+                                    myCurve.c += rightMid * offsetAmount;
+                                    myCurve.d += rightD * offsetAmount;
+                                }
+                                // --- END RIBBON MATH ---
+
+                                overlayBuffer.DrawCurve(renderColor, myCurve, currentThickness, new Unity.Mathematics.float2(0, 1));
                             }
                         }
                     }
                 }
 
-                // 2. Accumulate the Stations/Stops instead of drawing them immediately
+                // 2. Accumulate the Stations/Stops
                 if (DrawStops && hasWaypoints)
                 {
                     DynamicBuffer<RouteWaypoint> waypoints = waypointAccess[i];
@@ -108,14 +221,14 @@ namespace BetterTransitView.Jobs
                             {
                                 renderPos = trans.m_Position;
                                 validPos = true;
-                                uniqueKey = physicalStop; // Use the building as the overlap key
+                                uniqueKey = physicalStop; 
                             }
                         }
                         else if (TransformLookup.TryGetComponent(waypointEntity, out Game.Objects.Transform trans))
                         {
                             renderPos = trans.m_Position;
                             validPos = true;
-                            uniqueKey = waypointEntity; // Use the loose waypoint as the overlap key
+                            uniqueKey = waypointEntity; 
                         }
 
                         if (validPos)
@@ -132,6 +245,7 @@ namespace BetterTransitView.Jobs
         }
     }
 
+    // PASS 3: DRAW PIE CHARTS
     [BurstCompile]
     public struct DrawTransitStopsJob : IJob
     {
@@ -148,8 +262,8 @@ namespace BetterTransitView.Jobs
             float minZoom = 1600f;
             float maxZoom = 10000f;
             float normalizedZoom = math.clamp((zoomLevel - minZoom) / (maxZoom - minZoom), 0f, 1f);
-            float baseWidth = 5.0f;
-            float maxWidth = baseWidth * 10f;
+            float baseWidth = 4.5f;
+            float maxWidth = baseWidth * 11f;
             float thickness = math.lerp(baseWidth, maxWidth, normalizedZoom);
 
             var keys = stopPositions.GetKeyArray(Allocator.Temp);
@@ -183,22 +297,20 @@ namespace BetterTransitView.Jobs
                 float outerRadius = thickness * 2.5f;
                 float innerRadius = thickness * 1.5f;
 
-                // LAYER 1: Base Black Border (Makes it pop against the road/lines)
+                // LAYER 1: Base Black Border
                 overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, outerRadius + (thickness * 0.4f));
 
                 if (uniqueColors.Length == 1)
                 {
-                    // Single line at stop -> Solid Ring
                     overlayBuffer.DrawCircle(uniqueColors[0], pos, outerRadius);
                 }
                 else
                 {
-                    // Overlapping lines -> Segmented Pie Chart Ring
                     int colorsCount = uniqueColors.Length;
                     float ringCenterRadius = (outerRadius + innerRadius) * 0.4f;
                     float ringWidth = outerRadius - innerRadius;
                     
-                    int segmentsPerColor = 10; // Adjusts arc smoothness
+                    int segmentsPerColor = 10;
                     float anglePerColor = (math.PI * 2f) / colorsCount;
 
                     for (int c = 0; c < colorsCount; c++)
@@ -215,13 +327,12 @@ namespace BetterTransitView.Jobs
                             float3 p1 = pos + new float3(math.cos(a1), 0, math.sin(a1)) * ringCenterRadius;
                             float3 p2 = pos + new float3(math.cos(a2), 0, math.sin(a2)) * ringCenterRadius;
 
-                            // Draw the segmented arc line (Width expanded slightly to eliminate gaps)
                             overlayBuffer.DrawLine(cColor, new Colossal.Mathematics.Line3.Segment(p1, p2), ringWidth * 1.5f); 
                         }
                     }
                 }
 
-                // LAYER 3: Inner Black Border (Masks rough inner edges of line segments cleanly)
+                // LAYER 3: Inner Black Border
                 overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, innerRadius + (thickness * 0.2f));
 
                 // LAYER 4: Bright White Center

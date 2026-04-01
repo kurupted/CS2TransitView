@@ -325,8 +325,11 @@ namespace BetterTransitView.Systems
                 int capacity = 0;
                 int vehicles = TransportUIUtils.GetRouteVehiclesCount(EntityManager, entity, ref cargo, ref capacity);
                 float length = TransportUIUtils.GetRouteLength(EntityManager, entity);
+                bool isImperial = Game.Settings.SharedSettings.instance.userInterface.unitSystem == Game.Settings.InterfaceSettings.UnitSystem.Freedom;
+                string lengthStr = isImperial 
+                    ? (length / 1609.344f).ToString("0.1") + "mi" 
+                    : (length / 1000f).ToString("0.1") + "km";
                 int usage = capacity > 0 ? UnityEngine.Mathf.RoundToInt(((float)cargo / capacity) * 100) : 0;
-                string lengthStr = (length / 1000f).ToString("0.1") + "km";
                 
                 int stops = 0;
                 if (EntityManager.TryGetBuffer(entity, true, out DynamicBuffer<Game.Routes.RouteWaypoint> waypoints))

@@ -1,1 +1,2 @@
-- Initial release.
+- When transit routes overlap, draw them so that you can see both/all.
+- Show lengths in miles/km based on game settings.

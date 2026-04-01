@@ -48,7 +48,7 @@ This mod is safe to remove and doesn't add data to your save files.
     <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/better-transit-view.1914977/" />
 
     <!-- Version of the mod.  Copied from assembly Version. -->
-    <ModVersion Value="1.0.0" />
+    <ModVersion Value="1.1" />
 
     <!-- Recommended version of the base game to use the mod. -->
     <GameVersion Value="1.5.*" />
@@ -62,7 +62,8 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Change log.  Copied from ChangeLog.md file.  Supports minimal markdown subset. -->
     <ChangeLog>
-- Initial release.
+- When transit routes overlap, draw them so that you can see both/all.
+- Show lengths in miles/km based on game settings.
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->

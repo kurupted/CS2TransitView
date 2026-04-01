@@ -51,12 +51,26 @@ namespace BetterTransitView.Systems
             foreach (var e in TransitUISystem.HiddenCustomRoutes) hiddenSet.Add(e);
 
             OverlayRenderSystem.Buffer buffer = m_OverlayRenderSystem.GetBuffer(out JobHandle deps);
-
-            // Containers to collect overlap data before drawing
-            var stopColors = new NativeParallelMultiHashMap<Entity, UnityEngine.Color>(1024, Allocator.TempJob);
-            var stopPositions = new NativeHashMap<Entity, float3>(1024, Allocator.TempJob);
-
-            var transitJob = new RenderTransitLineOverlayJob
+            
+            // CONTAINERS - Drastically increased capacity to prevent Parallel Writer corruption/freezes!
+            var stopColors = new NativeParallelMultiHashMap<Entity, UnityEngine.Color>(30000, Allocator.TempJob);
+            var stopPositions = new NativeHashMap<Entity, float3>(30000, Allocator.TempJob);
+            var segmentToRouteMap = new NativeParallelMultiHashMap<Entity, Entity>(200000, Allocator.TempJob); // 200k ensures no freezing
+            
+            // PASS 1: Tally Shared Segments
+            var tallyJob = new TallySharedSegmentsJob
+            {
+                EntityHandle = SystemAPI.GetEntityTypeHandle(),
+                SegmentBufferType = SystemAPI.GetBufferTypeHandle<RouteSegment>(true),
+                PathElementLookup = SystemAPI.GetBufferLookup<PathElement>(true),
+                HiddenRouteType = SystemAPI.GetComponentTypeHandle<HiddenRoute>(true),
+                SegmentToRouteMap = segmentToRouteMap.AsParallelWriter()
+            };
+            
+            JobHandle tallyHandle = tallyJob.ScheduleParallel(m_TransitLinesQuery, Dependency);
+            
+            // PASS 2: Render Lines (Calculates Ribbon Offsets)
+            var renderJob = new RenderTransitLineOverlayJob
             {
                 overlayBuffer = buffer,
                 EntityType = SystemAPI.GetEntityTypeHandle(),
@@ -73,14 +87,15 @@ namespace BetterTransitView.Systems
                 ConnectedLookup = SystemAPI.GetComponentLookup<Game.Routes.Connected>(true),
                 ZoomLevel = m_CameraUpdateSystem.zoom,
                 
-                // Pass containers to Pass 1
                 StopColors = stopColors,
-                StopPositions = stopPositions
+                StopPositions = stopPositions,
+                SharedSegmentsMap = segmentToRouteMap
             };
+            
+            // Schedule Render Job to wait for BOTH the Tally Job AND the Render Buffer
+            JobHandle transitHandle = renderJob.Schedule(m_TransitLinesQuery, JobHandle.CombineDependencies(tallyHandle, deps));
 
-            // Pass 1: Collect
-            JobHandle transitHandle = transitJob.Schedule(m_TransitLinesQuery, JobHandle.CombineDependencies(Dependency, deps));
-
+            // PASS 3: Draw Stops (Pie Charts)
             var drawStopsJob = new DrawTransitStopsJob
             {
                 overlayBuffer = buffer,
@@ -90,10 +105,10 @@ namespace BetterTransitView.Systems
                 drawStops = TransitUISystem.ShowStopsAndStations
             };
 
-            // Pass 2: Draw the merged nodes
             JobHandle drawStopsHandle = drawStopsJob.Schedule(transitHandle);
 
-            // Cleanup
+            // CLEANUP: Dispose of everything safely using the job handles that finished using them
+            segmentToRouteMap.Dispose(transitHandle); 
             hiddenSet.Dispose(drawStopsHandle);
             stopColors.Dispose(drawStopsHandle);
             stopPositions.Dispose(drawStopsHandle);
@@ -101,6 +116,7 @@ namespace BetterTransitView.Systems
             Dependency = drawStopsHandle;
             m_OverlayRenderSystem.AddBufferWriter(Dependency);
         }
+        
 
         // Wrapper methods for TrafficRouteSystem compatibility
         public Buffer GetBuffer(out JobHandle dependencies)
