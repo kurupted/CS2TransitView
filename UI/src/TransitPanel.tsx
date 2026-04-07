@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, memo } from 'react';
+﻿import React, { useState, useEffect, memo, useRef } from 'react';
 import { bindValue, trigger, useValue } from "cs2/api";
 import { TransitType, SortField, TransitLine } from './types';
 
@@ -155,7 +155,7 @@ export const TransitPanel = () => {
 
     const [activeTab, setActiveTab] = useState<TransitType>('bus');
     const [activeLines, setActiveLines] = useState<Set<number>>(new Set());
-    const [hasInitialized, setHasInitialized] = useState(false);
+    const knownLineIds = useRef<Set<number>>(new Set());
     const [isOverflowOpen, setIsOverflowOpen] = useState(false);
     
     // Sorting States
@@ -175,31 +175,38 @@ export const TransitPanel = () => {
     let lines: TransitLine[] = [];
     try { if (rawData && rawData !== "[]") lines = JSON.parse(rawData); } catch (e) {}
 
+    // Keep track of new lines
     useEffect(() => {
-        if (isVisible && lines.length > 0 && !hasInitialized) {
-            setActiveLines(new Set(lines.filter(l => l.visible).map(l => l.id)));
-            setHasInitialized(true);
+        if (!isVisible) {
+            // SAFETY CHECK: Only clear state if it's not already empty
+            if (knownLineIds.current.size > 0) {
+                knownLineIds.current.clear();
+                setActiveLines(new Set());
+            }
+            return;
         }
 
-        // Reset initialization when the panel closes so it refreshes next time
-        if (!isVisible && hasInitialized) {
-            setHasInitialized(false);
-            setActiveLines(new Set());
-        }
-    }, [isVisible, lines, hasInitialized]);
+        if (lines.length > 0) {
+            setActiveLines(prev => {
+                let isNewData = false;
+                const nextActive = new Set(prev);
 
-    // ... existing useEffect ...
-    useEffect(() => {
-        if (isVisible && lines.length > 0 && !hasInitialized) {
-            setActiveLines(new Set(lines.filter(l => l.visible).map(l => l.id)));
-            setHasInitialized(true);
-        }
+                lines.forEach(l => {
+                    // If the UI has never seen this specific line ID before...
+                    if (!knownLineIds.current.has(l.id)) {
+                        isNewData = true;
+                        knownLineIds.current.add(l.id);
+                        if (l.visible) {
+                            nextActive.add(l.id);
+                        }
+                    }
+                });
 
-        if (!isVisible && hasInitialized) {
-            setHasInitialized(false);
-            setActiveLines(new Set());
+                return isNewData ? nextActive : prev;
+            });
         }
-    }, [isVisible, lines, hasInitialized]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps 
+    }, [isVisible, rawData]);
 
     // Push vanilla Info Panel to the right when this UI is open
     useEffect(() => {
@@ -331,7 +338,7 @@ export const TransitPanel = () => {
 
             <div style={{ display: 'flex', borderBottom: '1rem solid rgba(255,255,255,0.1)', position: 'relative' }}>
                 {['bus', 'train', 'subway', 'tram', 'ferry', 'cargo'].map((tab) => (
-                    <button key={tab} onClick={() => setActiveTab(tab as TransitType)} style={{ flex: 1, padding: '10rem 0', cursor: 'pointer', fontSize: '13rem', background: activeTab === tab ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: activeTab === tab ? 'white' : '#888', borderBottom: activeTab === tab ? '2rem solid #4287f5' : '2rem solid transparent' }}>
+                    <button key={tab} onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }} style={{ flex: 1, padding: '10rem 0', cursor: 'pointer', fontSize: '13rem', background: activeTab === tab ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: activeTab === tab ? 'white' : '#888', borderBottom: activeTab === tab ? '2rem solid #4287f5' : '2rem solid transparent' }}>
                         {tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </button>
                 ))}
@@ -447,7 +454,7 @@ export const TransitPanel = () => {
                     <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
                         
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Length">
-                            <LengthIcon /> {typeof line.length === 'string' ? line.length.replace(/([0-9.]+)([a-zA-Z]+)/g, '$1 $2') : line.length}
+                            <LengthIcon /> {line.length}
                         </span>
 
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Stops">

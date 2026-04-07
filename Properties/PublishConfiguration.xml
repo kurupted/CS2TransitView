@@ -49,7 +49,7 @@ This mod is safe to remove and doesn't add data to your save files.
     <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/better-transit-view.1914977/" />
 
     <!-- Version of the mod.  Copied from assembly Version. -->
-    <ModVersion Value="1.1" />
+    <ModVersion Value="1.2" />
 
     <!-- Recommended version of the base game to use the mod. -->
     <GameVersion Value="1.5.*" />
@@ -63,8 +63,10 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Change log.  Copied from ChangeLog.md file.  Supports minimal markdown subset. -->
     <ChangeLog>
-- When transit routes overlap, draw them so that you can see both/all.
-- Show lengths in miles/km based on game settings.
+- Draw routing-only waypoints.
+- Fixed non-custom (default) line names.
+- Fixed displayed route lengths.
+- Fixed visibility checkbox for lines created while the UI is open.
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->

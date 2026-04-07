@@ -10,7 +10,7 @@ namespace BetterTransitView
     public class ModAssemblyInfo
     {
         public const string Name        = "BetterTransitView";
-        public const string Version     = "1.1";
+        public const string Version     = "1.2";
         public const string Title       = "Better Transit View";
         public const string Description = "A more usable Transit Overview.";
     }

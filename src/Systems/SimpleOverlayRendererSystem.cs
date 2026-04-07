@@ -52,11 +52,13 @@ namespace BetterTransitView.Systems
 
             OverlayRenderSystem.Buffer buffer = m_OverlayRenderSystem.GetBuffer(out JobHandle deps);
             
-            // CONTAINERS - Drastically increased capacity to prevent Parallel Writer corruption/freezes!
+            // CONTAINERS
             var stopColors = new NativeParallelMultiHashMap<Entity, UnityEngine.Color>(30000, Allocator.TempJob);
             var stopPositions = new NativeHashMap<Entity, float3>(30000, Allocator.TempJob);
-            var segmentToRouteMap = new NativeParallelMultiHashMap<Entity, Entity>(200000, Allocator.TempJob); // 200k ensures no freezing
-            
+            var segmentToRouteMap = new NativeParallelMultiHashMap<Entity, Entity>(200000, Allocator.TempJob);
+            var waypointColors = new NativeParallelMultiHashMap<Entity, UnityEngine.Color>(30000, Allocator.TempJob);
+            var waypointPositions = new NativeHashMap<Entity, float3>(30000, Allocator.TempJob);
+
             // PASS 1: Tally Shared Segments
             var tallyJob = new TallySharedSegmentsJob
             {
@@ -83,12 +85,16 @@ namespace BetterTransitView.Systems
                 HiddenRoutes = hiddenSet,
                 WaypointBufferType = SystemAPI.GetBufferTypeHandle<Game.Routes.RouteWaypoint>(true),
                 TransformLookup = SystemAPI.GetComponentLookup<Game.Objects.Transform>(true),
+                PositionLookup = SystemAPI.GetComponentLookup<Game.Routes.Position>(true),
                 DrawStops = TransitUISystem.ShowStopsAndStations,
                 ConnectedLookup = SystemAPI.GetComponentLookup<Game.Routes.Connected>(true),
+                TransportStopLookup = SystemAPI.GetComponentLookup<Game.Routes.TransportStop>(true),
                 ZoomLevel = m_CameraUpdateSystem.zoom,
                 
                 StopColors = stopColors,
                 StopPositions = stopPositions,
+                WaypointColors = waypointColors,
+                WaypointPositions = waypointPositions,
                 SharedSegmentsMap = segmentToRouteMap
             };
             
@@ -107,13 +113,30 @@ namespace BetterTransitView.Systems
 
             JobHandle drawStopsHandle = drawStopsJob.Schedule(transitHandle);
 
+            // PASS 4: Draw Waypoints (Solid circles)
+            var drawWaypointsJob = new DrawTransitWaypointsJob
+            {
+                overlayBuffer = buffer,
+                waypointColors = waypointColors,
+                waypointPositions = waypointPositions,
+                zoomLevel = m_CameraUpdateSystem.zoom
+            };
+            
+            // Schedule this to wait on drawStopsHandle
+            JobHandle waypointsHandle = drawWaypointsJob.Schedule(drawStopsHandle);
+
+            // The final dependency is now just the very last job in the chain
+            JobHandle finalDeps = waypointsHandle;
+
             // CLEANUP: Dispose of everything safely using the job handles that finished using them
             segmentToRouteMap.Dispose(transitHandle); 
             hiddenSet.Dispose(drawStopsHandle);
             stopColors.Dispose(drawStopsHandle);
             stopPositions.Dispose(drawStopsHandle);
+            waypointColors.Dispose(waypointsHandle);
+            waypointPositions.Dispose(waypointsHandle);
 
-            Dependency = drawStopsHandle;
+            Dependency = finalDeps;
             m_OverlayRenderSystem.AddBufferWriter(Dependency);
         }
         

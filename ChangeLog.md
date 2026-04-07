@@ -1,2 +1,4 @@
-- When transit routes overlap, draw them so that you can see both/all.
-- Show lengths in miles/km based on game settings.
+- Draw routing-only waypoints.
+- Fixed non-custom (default) line names.
+- Fixed displayed route lengths.
+- Fixed visibility checkbox for lines created while the UI is open.

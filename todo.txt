@@ -1,3 +1,3 @@
 ﻿
 - show day/night route icons
-- option to make subway routes show above ground somehow
+- option to make subway routes show above ground for better visibility

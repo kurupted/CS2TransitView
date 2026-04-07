@@ -307,15 +307,22 @@ namespace BetterTransitView.Systems
                 string displayType = "Route";
                 if (!string.IsNullOrEmpty(type) && type != "none") displayType = char.ToUpper(type[0]) + type.Substring(1);
 
-                string name = nameSystem.GetRenderedLabelName(entity);
-                if (string.IsNullOrEmpty(name) || name.StartsWith("Assets."))
+                string name;
+                if (nameSystem.TryGetCustomName(entity, out string customName))
+                {
+                    name = customName;
+                }
+                else
                 {
                     if (EntityManager.TryGetComponent<Game.Routes.RouteNumber>(entity, out var routeNum))
                     {
                         int num = routeNum.m_Number;
-                        name = num == 0 ? $"{displayType} {entity.Index}" : $"{displayType} {num}";
+                        name = num == 0 ? $"{displayType} Line {entity.Index}" : $"{displayType} Line {num}";
                     }
-                    else name = "Unnamed Route";
+                    else 
+                    {
+                        name = "Unnamed Route";
+                    }
                 }
 
                 var colorComp = EntityManager.GetComponentData<Game.Routes.Color>(entity); 
@@ -324,12 +331,13 @@ namespace BetterTransitView.Systems
                 int cargo = 0;
                 int capacity = 0;
                 int vehicles = TransportUIUtils.GetRouteVehiclesCount(EntityManager, entity, ref cargo, ref capacity);
+                int usage = capacity > 0 ? UnityEngine.Mathf.RoundToInt(((float)cargo / capacity) * 100) : 0;
+                
                 float length = TransportUIUtils.GetRouteLength(EntityManager, entity);
                 bool isImperial = Game.Settings.SharedSettings.instance.userInterface.unitSystem == Game.Settings.InterfaceSettings.UnitSystem.Freedom;
                 string lengthStr = isImperial 
-                    ? (length / 1609.344f).ToString("0.1") + "mi" 
-                    : (length / 1000f).ToString("0.1") + "km";
-                int usage = capacity > 0 ? UnityEngine.Mathf.RoundToInt(((float)cargo / capacity) * 100) : 0;
+                    ? (length / 1609.344f).ToString("0.0") + " mi" 
+                    : (length / 1000f).ToString("0.0") + " km";
                 
                 int stops = 0;
                 if (EntityManager.TryGetBuffer(entity, true, out DynamicBuffer<Game.Routes.RouteWaypoint> waypoints))

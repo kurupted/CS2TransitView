@@ -68,7 +68,9 @@ namespace BetterTransitView.Jobs
         
         [ReadOnly] public BufferTypeHandle<RouteWaypoint> WaypointBufferType;
         [ReadOnly] public ComponentLookup<Game.Routes.Connected> ConnectedLookup; 
+        [ReadOnly] public ComponentLookup<Game.Routes.TransportStop> TransportStopLookup;
         [ReadOnly] public ComponentLookup<Game.Objects.Transform> TransformLookup;
+        [ReadOnly] public ComponentLookup<Game.Routes.Position> PositionLookup;
         public bool DrawStops;
         
         [ReadOnly] public BufferLookup<PathElement> PathElementLookup;
@@ -82,8 +84,10 @@ namespace BetterTransitView.Jobs
         // --- Output Containers ---
         public NativeParallelMultiHashMap<Entity, UnityEngine.Color> StopColors;
         public NativeHashMap<Entity, float3> StopPositions;
+
+        public NativeParallelMultiHashMap<Entity, UnityEngine.Color> WaypointColors;
+        public NativeHashMap<Entity, float3> WaypointPositions;
         
-        // --- Ribbon Data Map ---
         [ReadOnly] public NativeParallelMultiHashMap<Entity, Entity> SharedSegmentsMap;
 
         public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
@@ -181,10 +185,8 @@ namespace BetterTransitView.Jobs
 
                                     // Use the dynamically scaled ribbon width so they stay snug
                                     float offsetAmount = (myIndex - (totalLines - 1) / 2f) * currentRibbonWidth;
-
                                     float3 tangentA = MathUtils.Tangent(myCurve, 0f);
                                     float3 tangentD = MathUtils.Tangent(myCurve, 1f);
-
                                     float3 up = new float3(0, 1, 0);
                                     float3 rightA = math.normalizesafe(math.cross(up, tangentA));
                                     float3 rightD = math.normalizesafe(math.cross(up, tangentD));
@@ -203,7 +205,7 @@ namespace BetterTransitView.Jobs
                     }
                 }
 
-                // 2. Accumulate the Stations/Stops
+                // 2. Accumulate the Stations/Stops/Waypoints
                 if (DrawStops && hasWaypoints)
                 {
                     DynamicBuffer<RouteWaypoint> waypoints = waypointAccess[i];
@@ -212,31 +214,41 @@ namespace BetterTransitView.Jobs
                         Entity waypointEntity = waypoints[w].m_Waypoint;
                         float3 renderPos = float3.zero;
                         bool validPos = false;
-                        Entity uniqueKey = Entity.Null;
+                        Entity uniqueKey = waypointEntity; 
 
-                        if (ConnectedLookup.TryGetComponent(waypointEntity, out var connected))
+                        bool isStop = TransportStopLookup.HasComponent(waypointEntity);
+                        bool hasConnected = ConnectedLookup.TryGetComponent(waypointEntity, out var connected);
+
+                        if (hasConnected && TransportStopLookup.HasComponent(connected.m_Connected))
                         {
-                            Entity physicalStop = connected.m_Connected;
-                            if (TransformLookup.TryGetComponent(physicalStop, out Game.Objects.Transform trans))
-                            {
-                                renderPos = trans.m_Position;
-                                validPos = true;
-                                uniqueKey = physicalStop; 
-                            }
+                            isStop = true;
+                            uniqueKey = connected.m_Connected; 
                         }
-                        else if (TransformLookup.TryGetComponent(waypointEntity, out Game.Objects.Transform trans))
+
+                        // Get the physical position
+                        if (isStop && hasConnected && TransformLookup.TryGetComponent(connected.m_Connected, out Game.Objects.Transform stopTrans))
                         {
-                            renderPos = trans.m_Position;
+                            // Actual transit stops have a physical Transform
+                            renderPos = stopTrans.m_Position;
                             validPos = true;
-                            uniqueKey = waypointEntity; 
+                        }
+                        else if (PositionLookup.TryGetComponent(waypointEntity, out Game.Routes.Position wpPos))
+                        {
+                            renderPos = wpPos.m_Position;
+                            validPos = true;
                         }
 
                         if (validPos)
                         {
-                            StopColors.Add(uniqueKey, renderColor);
-                            if (!StopPositions.ContainsKey(uniqueKey))
+                            if (isStop) 
                             {
-                                StopPositions.Add(uniqueKey, renderPos);
+                                StopColors.Add(uniqueKey, renderColor);
+                                if (!StopPositions.ContainsKey(uniqueKey)) StopPositions.Add(uniqueKey, renderPos);
+                            }
+                            else 
+                            {
+                                WaypointColors.Add(uniqueKey, renderColor);
+                                if (!WaypointPositions.ContainsKey(uniqueKey)) WaypointPositions.Add(uniqueKey, renderPos);
                             }
                         }
                     }
@@ -340,6 +352,47 @@ namespace BetterTransitView.Jobs
             }
             
             uniqueColors.Dispose();
+            keys.Dispose();
+        }
+    }
+    
+    
+    // PASS 4: DRAW WAYPOINTS
+    [BurstCompile]
+    public struct DrawTransitWaypointsJob : IJob
+    {
+        public OverlayRenderSystem.Buffer overlayBuffer;
+        [ReadOnly] public NativeParallelMultiHashMap<Entity, UnityEngine.Color> waypointColors;
+        [ReadOnly] public NativeHashMap<Entity, float3> waypointPositions;
+        public float zoomLevel;
+
+        public void Execute()
+        {
+            var keys = waypointPositions.GetKeyArray(Allocator.Temp);
+            if (keys.Length == 0) 
+            {
+                keys.Dispose();
+                return;
+            }
+            keys.Sort(); 
+
+            float minZoom = 1600f;
+            float maxZoom = 10000f;
+            float normalizedZoom = math.clamp((zoomLevel - minZoom) / (maxZoom - minZoom), 0f, 1f);
+            float thickness = math.lerp(4.0f, 4.0f * 12f, normalizedZoom);
+            float radius = thickness * 2.1f;
+
+            for (int i = 0; i < keys.Length; i++)
+            {
+                Entity entity = keys[i];
+                float3 pos = waypointPositions[entity];
+
+                if (waypointColors.TryGetFirstValue(entity, out UnityEngine.Color color, out _))
+                {
+                    overlayBuffer.DrawCircle(new UnityEngine.Color(0, 0, 0, 0.7f), pos, radius + (thickness * 0.3f));
+                    overlayBuffer.DrawCircle(color, pos, radius); 
+                }
+            }
             keys.Dispose();
         }
     }
