@@ -1,4 +1,3 @@
-- Draw routing-only waypoints.
-- Fixed non-custom (default) line names.
-- Fixed displayed route lengths.
-- Fixed visibility checkbox for lines created while the UI is open.
+- Set a hardcoded transparency level
+- Panel will now open even when there are no existing transit lines
+- Fixed vanilla infoview appearing, after latest patch

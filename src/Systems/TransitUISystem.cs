@@ -44,6 +44,8 @@ namespace BetterTransitView.Systems
         private int m_TransitUpdateFrame = 0;
         private bool m_TransitLinesDirty = false;
         private bool m_WasToggleKeyDown = false;
+        private int m_EnforceInfoviewFrames = 0;
+        private Game.Tools.ToolBaseSystem m_LastActiveTool;
 
         // Public Statics for the Render Jobs
         public static HashSet<Entity> HiddenCustomRoutes = new HashSet<Entity>();
@@ -185,6 +187,7 @@ namespace BetterTransitView.Systems
 
                 if (selectedPrefab != null) {
                     m_ToolSystem.ActivatePrefabTool(selectedPrefab);
+                    m_EnforceInfoviewFrames = 2;
                 }
             }));
 
@@ -232,6 +235,17 @@ namespace BetterTransitView.Systems
                 else ActivateTransitMode(m_PendingTransitMode);
                 m_ModeChangeRequested = false;
             }
+            
+            // Detect if a tool was just equipped OR unequipped
+            if (m_ToolSystem.activeTool != m_LastActiveTool)
+            {
+                m_LastActiveTool = m_ToolSystem.activeTool;
+                // If our panel is open, protect our infoview state from vanilla tool-drop behaviors
+                if (this.IsTransitPanelActive) 
+                {
+                    m_EnforceInfoviewFrames = 2;
+                }
+            }
 
             // 3. Transit Panel Logic Loop
             if (this.IsTransitPanelActive)
@@ -239,7 +253,8 @@ namespace BetterTransitView.Systems
                 SyncVanillaVisibilityToUI();
 
                 // Keep the Gray Map checkbox synced if the user manually closes the vanilla infoview
-                if (m_CustomInfoviewEntity != Entity.Null)
+                // But, pause the sync logic if we are actively enforcing the infoview state (ie trying to prevent vanilla view after we click Tool)
+                if (m_EnforceInfoviewFrames == 0 && m_CustomInfoviewEntity != Entity.Null)
                 {
                     bool isActuallyGray = false;
                     
@@ -272,9 +287,24 @@ namespace BetterTransitView.Systems
                 }
             }
             
+            // Aggressively override vanilla infoview hijacking when a tool is selected
+            if (m_EnforceInfoviewFrames > 0)
+            {
+                if (ShowInfoviewBackground && m_CustomInfoviewEntity != Entity.Null)
+                {
+                    m_InfoviewsUISystem.SetActiveInfoview(m_CustomInfoviewEntity);
+                }
+                else
+                {
+                    m_InfoviewsUISystem.SetActiveInfoview(Entity.Null);
+                }
+                m_EnforceInfoviewFrames--;
+            }
+
             base.OnUpdate();
         }
 
+        
         private void UpdateTransitLinesData()
         {
             if (!this.IsTransitPanelActive) return;

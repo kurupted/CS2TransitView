@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, memo, useRef } from 'react';
 import { bindValue, trigger, useValue } from "cs2/api";
 import { TransitType, SortField, TransitLine } from './types';
+import { VanillaComponentResolver } from "./VanillaComponentResolver";
 
 const showTransitPanel$ = bindValue<boolean>("BetterTransitView", "showTransitPanel", false);
 const transitLinesData$ = bindValue<string>("BetterTransitView", "transitLinesData", "[]");
@@ -148,6 +149,7 @@ const CustomDropdown = ({ value, options, onChange }: { value: string, options: 
 };
 
 export const TransitPanel = () => {
+    const theme = VanillaComponentResolver.instance.ToolOptionsTheme;
     const isVisible = useValue(showTransitPanel$);
     const rawData = useValue(transitLinesData$);
     const showStopsAndStations = useValue(showStopsAndStations$);
@@ -241,7 +243,6 @@ export const TransitPanel = () => {
     }, [isVisible]);
 
     if (!isVisible) return null;
-    if (lines.length === 0) return (<div style={{ position: 'absolute', left: '60rem', top: '60rem', width: '320rem', backgroundColor: 'rgba(25, 30, 35, 0.95)', padding: '20rem', color: 'white' }}>Loading Transit Data...</div>);
 
     const currentLines = lines.filter(l => {
         if (activeTab === 'cargo') return l.cargo;
@@ -313,180 +314,196 @@ export const TransitPanel = () => {
         trigger("BetterTransitView", "setAllLinesVisible", targetState);
     };
 
+    const panelOpacity = showInfoviewBackground ? 1.0 : 0.9;
+
     return (
-        <div style={{ position: 'absolute', top: '55rem', left: '10rem', width: '450rem', maxHeight: '800rem', backgroundColor: 'var(--panelColorNormal)', borderRadius: '4rem', padding: '12rem', color: 'white', pointerEvents: 'auto', boxShadow: '0 4px 8px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column' }}>
-
-            <div style={{ padding: '10rem', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ margin: 0, fontSize: '16rem', fontWeight: 'bold' }}>Transit Overview</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15rem' }}>
-                    <div onClick={() => trigger("BetterTransitView", "setShowInfoviewBackground", !showInfoviewBackground)} style={{ display: 'flex', alignItems: 'center', gap: '6rem', fontSize: '12rem', cursor: 'pointer', color: '#ccc' }}>
-                        <CustomCheckbox checked={showInfoviewBackground} onChange={() => {}} />
-                        &nbsp; Gray Map &nbsp;
-                    </div>
-                    <div onClick={() => trigger("BetterTransitView", "setShowStopsAndStations", !showStopsAndStations)} style={{ display: 'flex', alignItems: 'center', gap: '6rem', fontSize: '12rem', cursor: 'pointer', color: '#ccc' }}>
-                        <CustomCheckbox checked={showStopsAndStations} onChange={() => {}} />
-                        &nbsp; Stops &nbsp;
-                    </div>
-                    <button onClick={toggleMasterAll} style={{ backgroundColor: 'rgba(255,255,255,0.1)', border: '1rem solid rgba(255,255,255,0.2)', color: 'white', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', fontSize: '11rem', textTransform: 'uppercase' }}>
-                        Toggle All
-                    </button>
-                    <button onClick={() => trigger("BetterTransitView", "toggleTransitCustom", false)} style={{ backgroundColor: ' rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', marginLeft: '5rem', padding: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <CloseIcon />
-                    </button>
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', borderBottom: '1rem solid rgba(255,255,255,0.1)', position: 'relative' }}>
-                {['bus', 'train', 'subway', 'tram', 'ferry', 'cargo'].map((tab) => (
-                    <button key={tab} onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }} style={{ flex: 1, padding: '10rem 0', cursor: 'pointer', fontSize: '13rem', background: activeTab === tab ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: activeTab === tab ? 'white' : '#888', borderBottom: activeTab === tab ? '2rem solid #4287f5' : '2rem solid transparent' }}>
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                    </button>
-                ))}
-
-                {/* OVERFLOW BUTTON */}
-                <button
-                    onClick={() => setIsOverflowOpen(!isOverflowOpen)}
-                    style={{
-                        padding: '10rem 15rem', cursor: 'pointer', background: 'transparent', border: 'none',
-                        borderBottom: (activeTab === 'airplane' || activeTab === 'ship') ? '2rem solid #4287f5' : '2rem solid transparent',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}
-                >
-                    <MoreIcon />
-                </button>
-
-                {/* DROPDOWN MENU */}
-                {isOverflowOpen && (
-                    <>
-                        {/* Invisible click-away overlay */}
-                        <div onClick={() => setIsOverflowOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
-
-                        <div style={{
-                            position: 'absolute', top: '100%', right: '0', backgroundColor: 'rgba(25, 30, 35, 0.98)',
-                            border: '1rem solid rgba(255,255,255,0.2)', borderRadius: '4rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                            zIndex: 100, display: 'flex', flexDirection: 'column', minWidth: '100rem'
-                        }}>
-                            {['airplane', 'ship'].map(tab => (
-                                <div
-                                    key={tab}
-                                    onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }}
-                                    style={{
-                                        padding: '10rem 15rem', cursor: 'pointer', fontSize: '13rem',
-                                        color: activeTab === tab ? '#4287f5' : '#ccc',
-                                        backgroundColor: activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                        borderBottom: '1rem solid rgba(255,255,255,0.05)'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent'}
-                                >
-                                    {tab === 'airplane' ? 'Air' : 'Ship'}
-                                </div>
-                            ))}
+        <div style={{
+            position: 'absolute',
+            top: '55rem',
+            left: '10rem',
+            pointerEvents: 'none'
+        }}>
+            <div className={theme?.toolOptionsPanel}
+                 style={{ width: '450rem', maxHeight: '800rem', padding: '12rem', pointerEvents: 'auto', display: 'flex', flexDirection: 'column',
+                     opacity: panelOpacity,
+                     backgroundImage: 'none',
+                     backgroundColor: theme?.toolOptionsPanel ? undefined : `rgba(42, 55, 83, ${panelOpacity})`,
+                     backdropFilter: theme?.toolOptionsPanel ? undefined : 'blur(10px)',
+                     border: theme?.toolOptionsPanel ? undefined : '1rem solid rgba(255, 255, 255, 0.1)',
+                     borderRadius: theme?.toolOptionsPanel ? undefined : '6rem'}}>
+    
+                <div style={{ padding: '10rem', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 style={{ margin: 0, fontSize: '16rem', fontWeight: 'bold' }}>Transit Overview</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15rem' }}>
+                        <div onClick={() => trigger("BetterTransitView", "setShowInfoviewBackground", !showInfoviewBackground)} style={{ display: 'flex', alignItems: 'center', gap: '6rem', fontSize: '12rem', cursor: 'pointer', color: '#ccc' }}>
+                            <CustomCheckbox checked={showInfoviewBackground} onChange={() => {}} />
+                            &nbsp; Gray Map &nbsp;
                         </div>
-                    </>
-                )}
-            </div>
-
-            <div style={{ padding: '10rem 15rem', backgroundColor: 'rgba(0,0,0,0.2)', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8rem' }}>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8rem', fontSize: '12rem', color: '#888' }}>
-                        Sort: &nbsp;
-                        <CustomDropdown
-                            value={sortField}
-                            options={sortOptions.map(opt => ({ value: opt, label: sortLabels[opt] }))}
-                            onChange={(val) => setSortField(val as SortField)}
-                        />
-                        <button onClick={() => setSortDesc(!sortDesc)} style={{ background: 'rgba(255,255,255,0.05)', border: '1rem solid rgba(255,255,255,0.1)', borderRadius: '4rem', color: '#fff', cursor: 'pointer', padding: '4rem 8rem', fontSize: '12rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {sortDesc ? 'DESC ↓' : 'ASC ↑'}
+                        <div onClick={() => trigger("BetterTransitView", "setShowStopsAndStations", !showStopsAndStations)} style={{ display: 'flex', alignItems: 'center', gap: '6rem', fontSize: '12rem', cursor: 'pointer', color: '#ccc' }}>
+                            <CustomCheckbox checked={showStopsAndStations} onChange={() => {}} />
+                            &nbsp; Stops &nbsp;
+                        </div>
+                        <button onClick={toggleMasterAll} style={{ backgroundColor: 'rgba(255,255,255,0.1)', border: '1rem solid rgba(255,255,255,0.2)', color: 'white', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', fontSize: '11rem', textTransform: 'uppercase' }}>
+                            Toggle All
+                        </button>
+                        <button onClick={() => trigger("BetterTransitView", "toggleTransitCustom", false)} style={{ backgroundColor: ' rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', marginLeft: '5rem', padding: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CloseIcon />
                         </button>
                     </div>
-
-                    {/* NEW TOOL BUTTON */}
+                </div>
+    
+                <div style={{ display: 'flex', borderBottom: '1rem solid rgba(255,255,255,0.1)', position: 'relative' }}>
+                    {['bus', 'train', 'subway', 'tram', 'ferry', 'cargo'].map((tab) => (
+                        <button key={tab} onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }} style={{ flex: 1, padding: '10rem 0', cursor: 'pointer', fontSize: '13rem', background: activeTab === tab ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: activeTab === tab ? 'white' : '#888', borderBottom: activeTab === tab ? '2rem solid #4287f5' : '2rem solid transparent' }}>
+                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        </button>
+                    ))}
+    
+                    {/* OVERFLOW BUTTON */}
                     <button
-                        onClick={() => trigger("BetterTransitView", "activateTransitTool", activeTab)}
-                        style={{ marginLeft: '10rem', backgroundColor: '#4287f5', border: 'none', borderRadius: '4rem', color: 'white', padding: '4rem 10rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6rem', fontSize: '12rem', fontWeight: 'bold' }}
-                        title={`Equip ${activeTab} tool`}
+                        onClick={() => setIsOverflowOpen(!isOverflowOpen)}
+                        style={{
+                            padding: '10rem 15rem', cursor: 'pointer', background: 'transparent', border: 'none',
+                            borderBottom: (activeTab === 'airplane' || activeTab === 'ship') ? '2rem solid #4287f5' : '2rem solid transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}
                     >
-                        <ToolIcon /> &nbsp;Tool
+                        <MoreIcon />
                     </button>
-
+    
+                    {/* DROPDOWN MENU */}
+                    {isOverflowOpen && (
+                        <>
+                            {/* Invisible click-away overlay */}
+                            <div onClick={() => setIsOverflowOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
+    
+                            <div style={{
+                                position: 'absolute', top: '100%', right: '0', backgroundColor: 'rgba(25, 30, 35, 0.98)',
+                                border: '1rem solid rgba(255,255,255,0.2)', borderRadius: '4rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                zIndex: 100, display: 'flex', flexDirection: 'column', minWidth: '100rem'
+                            }}>
+                                {['airplane', 'ship'].map(tab => (
+                                    <div
+                                        key={tab}
+                                        onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }}
+                                        style={{
+                                            padding: '10rem 15rem', cursor: 'pointer', fontSize: '13rem',
+                                            color: activeTab === tab ? '#4287f5' : '#ccc',
+                                            backgroundColor: activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                            borderBottom: '1rem solid rgba(255,255,255,0.05)'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent'}
+                                    >
+                                        {tab === 'airplane' ? 'Air' : 'Ship'}
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
-                {/* Fixed Toggle Tab label acting as clickable trigger */}
-                <div onClick={toggleTabAll} style={{ display: 'flex', alignItems: 'center', gap: '8rem', fontSize: '13rem', cursor: 'pointer', color: '#fff' }}>
-                    Toggle Tab <CustomCheckbox checked={allVisibleInTab} onChange={() => {}} />
-                </div>
-            </div>
-
-            <div style={{ padding: '10rem', overflowY: 'auto', flex: 1 }}>
-                {sortedLines.length === 0 ? (
-                    <div style={{ padding: '20rem', textAlign: 'center', color: '#666', fontSize: '13rem' }}>No lines found.</div>
-                ) : sortedLines.map(line => (
-                    <div key={line.id} onClick={() => toggleLine(line.id)} style={{ display: 'flex', alignItems: 'center', padding: '10rem', marginBottom: '8rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6rem', borderLeft: `4rem solid ${line.color}`, cursor: 'pointer' }}>
-
-                {/* Type Icon is dynamically added in the Cargo Tab */}
-                {activeTab === 'cargo' && (
-                    <div style={{ marginRight: '10rem', display: 'flex', alignItems: 'center' }} title={`Type: ${line.type}`}>
-                        <TransportTypeIcon type={line.type} />
-                    </div>
-                )}
-
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '16rem', marginBottom: '8rem', display: 'flex', alignItems: 'center', gap: '8rem' }}>
-                        <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                            {line.name} &nbsp;
-                        </span>
-                        <div
-                            onClick={(e) => {
-                                e.stopPropagation(); // Prevents the row from toggling visibility
-                                trigger("BetterTransitView", "showVanillaLineInfo", line.id);
-                            }}
-                            title="Inspect Route"
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', borderRadius: '4rem', transition: 'background-color 0.1s', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.05)' }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+    
+                <div style={{ padding: '10rem 15rem', backgroundColor: 'rgba(0,0,0,0.2)', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8rem' }}>
+    
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8rem', fontSize: '12rem', color: '#888' }}>
+                            Sort: &nbsp;
+                            <CustomDropdown
+                                value={sortField}
+                                options={sortOptions.map(opt => ({ value: opt, label: sortLabels[opt] }))}
+                                onChange={(val) => setSortField(val as SortField)}
+                            />
+                            <button onClick={() => setSortDesc(!sortDesc)} style={{ background: 'rgba(255,255,255,0.05)', border: '1rem solid rgba(255,255,255,0.1)', borderRadius: '4rem', color: '#fff', cursor: 'pointer', padding: '4rem 8rem', fontSize: '12rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {sortDesc ? 'DESC ↓' : 'ASC ↑'}
+                            </button>
+                        </div>
+    
+                        {/* NEW TOOL BUTTON */}
+                        <button
+                            onClick={() => trigger("BetterTransitView", "activateTransitTool", activeTab)}
+                            style={{ marginLeft: '10rem', backgroundColor: '#4287f5', border: 'none', borderRadius: '4rem', color: 'white', padding: '4rem 10rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6rem', fontSize: '12rem', fontWeight: 'bold' }}
+                            title={`Equip ${activeTab} tool`}
                         >
-                            <SearchIcon />
+                            <ToolIcon /> &nbsp;Tool
+                        </button>
+    
+                    </div>
+                    {/* Fixed Toggle Tab label acting as clickable trigger */}
+                    <div onClick={toggleTabAll} style={{ display: 'flex', alignItems: 'center', gap: '8rem', fontSize: '13rem', cursor: 'pointer', color: '#fff' }}>
+                        Toggle Tab <CustomCheckbox checked={allVisibleInTab} onChange={() => {}} />
+                    </div>
+                </div>
+    
+                <div style={{ padding: '10rem', overflowY: 'auto', flex: 1 }}>
+                    {sortedLines.length === 0 ? (
+                        <div style={{ padding: '20rem', textAlign: 'center', color: '#666', fontSize: '13rem' }}>No lines found.</div>
+                    ) : sortedLines.map(line => (
+                        <div key={line.id} onClick={() => toggleLine(line.id)} style={{ display: 'flex', alignItems: 'center', padding: '10rem', marginBottom: '8rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6rem', borderLeft: `4rem solid ${line.color}`, cursor: 'pointer' }}>
+    
+                    {/* Type Icon is dynamically added in the Cargo Tab */}
+                    {activeTab === 'cargo' && (
+                        <div style={{ marginRight: '10rem', display: 'flex', alignItems: 'center' }} title={`Type: ${line.type}`}>
+                            <TransportTypeIcon type={line.type} />
+                        </div>
+                    )}
+    
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '16rem', marginBottom: '8rem', display: 'flex', alignItems: 'center', gap: '8rem' }}>
+                            <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                {line.name} &nbsp;
+                            </span>
+                            <div
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Prevents the row from toggling visibility
+                                    trigger("BetterTransitView", "showVanillaLineInfo", line.id);
+                                }}
+                                title="Inspect Route"
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', borderRadius: '4rem', transition: 'background-color 0.1s', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.05)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                            >
+                                <SearchIcon />
+                            </div>
+                        </div>
+    
+                        
+                        <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
+                            
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Length">
+                                <LengthIcon /> {line.length}
+                            </span>
+    
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Stops">
+                                <StopIcon /> {line.stops || 0}
+                            </span>
+                            
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Vehicles">
+                                <VehicleIcon /> {line.vehicles}
+                            </span>
+    
+                            {line.cargo ? (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Cargo Transported">
+                                    <CargoIcon /> {((line.passengers || 0) / 1000).toFixed(0)} t
+                                </span>
+                            ) : (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Passengers">
+                                    <PassengerIcon /> {line.passengers || 0}
+                                </span>
+                            )}
+    
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Usage">
+                                <UsageIcon /> {line.usage}%
+                            </span>
                         </div>
                     </div>
-
-                    
-                    <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
-                        
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Length">
-                            <LengthIcon /> {line.length}
-                        </span>
-
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Stops">
-                            <StopIcon /> {line.stops || 0}
-                        </span>
-                        
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Vehicles">
-                            <VehicleIcon /> {line.vehicles}
-                        </span>
-
-                        {line.cargo ? (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Cargo Transported">
-                                <CargoIcon /> {((line.passengers || 0) / 1000).toFixed(0)} t
-                            </span>
-                        ) : (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Passengers">
-                                <PassengerIcon /> {line.passengers || 0}
-                            </span>
-                        )}
-
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Usage">
-                            <UsageIcon /> {line.usage}%
-                        </span>
+    
+                    {/* Dummy onChange protects bubbling conflicts but relies on row's click trigger natively */}
+                    <div style={{ marginLeft: '15rem', flexShrink: 0 }}>
+                        <CustomCheckbox checked={activeLines.has(line.id)} onChange={() => {}} />
                     </div>
                 </div>
-
-                {/* Dummy onChange protects bubbling conflicts but relies on row's click trigger natively */}
-                <div style={{ marginLeft: '15rem', flexShrink: 0 }}>
-                    <CustomCheckbox checked={activeLines.has(line.id)} onChange={() => {}} />
-                </div>
+                ))}
             </div>
-            ))}
         </div>
 </div>
 );

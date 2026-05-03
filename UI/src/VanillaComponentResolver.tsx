@@ -4,6 +4,7 @@ import { ModuleRegistry } from "cs2/modding";
 const registryIndex = {
     FOCUS_DISABLED: ["game-ui/common/focus/focus-key.ts", "FOCUS_DISABLED"],
     FOCUS_AUTO: ["game-ui/common/focus/focus-key.ts", "FOCUS_AUTO"],
+    ToolOptionsTheme: ["game-ui/game/components/tool-options/tool-options-panel.module.scss", "classes"],
 }
 
 export class VanillaComponentResolver {
@@ -27,4 +28,6 @@ export class VanillaComponentResolver {
 
     public get FOCUS_DISABLED(): UniqueFocusKey { return this.cachedData["FOCUS_DISABLED"] ?? this.updateCache("FOCUS_DISABLED") }
     public get FOCUS_AUTO(): UniqueFocusKey { return this.cachedData["FOCUS_AUTO"] ?? this.updateCache("FOCUS_AUTO") }
+
+    public get ToolOptionsTheme(): any { return this.cachedData["ToolOptionsTheme"] ?? this.updateCache("ToolOptionsTheme") }
 }
