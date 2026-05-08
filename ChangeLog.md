@@ -1,3 +1,1 @@
-- Set a hardcoded transparency level
-- Panel will now open even when there are no existing transit lines
-- Fixed vanilla infoview appearing, after latest patch
+- Transparency fix

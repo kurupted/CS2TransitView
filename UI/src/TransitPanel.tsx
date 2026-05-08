@@ -327,9 +327,9 @@ export const TransitPanel = () => {
                  style={{ width: '450rem', maxHeight: '800rem', padding: '12rem', pointerEvents: 'auto', display: 'flex', flexDirection: 'column',
                      opacity: panelOpacity,
                      backgroundImage: 'none',
-                     backgroundColor: theme?.toolOptionsPanel ? undefined : `rgba(42, 55, 83, ${panelOpacity})`,
+                     backgroundColor: `rgba(42, 55, 83, ${panelOpacity})`,
                      backdropFilter: theme?.toolOptionsPanel ? undefined : 'blur(10px)',
-                     border: theme?.toolOptionsPanel ? undefined : '1rem solid rgba(255, 255, 255, 0.1)',
+                     border: '1rem solid rgba(255, 255, 255, 0.1)',
                      borderRadius: theme?.toolOptionsPanel ? undefined : '6rem'}}>
     
                 <div style={{ padding: '10rem', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
