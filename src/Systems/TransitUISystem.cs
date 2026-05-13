@@ -27,6 +27,8 @@ namespace BetterTransitView.Systems
         private ValueBinding<bool> showTransitPanelBinding;
         private ValueBinding<string> transitLinesDataBinding;
         private ValueBinding<bool> showStopsAndStationsBinding;
+        private ValueBinding<bool> showWaitingPassengersBinding;
+        private ValueBinding<bool> showTransitVehiclesBinding;
         private ValueBinding<bool> showInfoviewBackgroundBinding;
 
         // Queries & Entities
@@ -50,7 +52,9 @@ namespace BetterTransitView.Systems
         // Public Statics for the Render Jobs
         public static HashSet<Entity> HiddenCustomRoutes = new HashSet<Entity>();
         public static bool ShowStopsAndStations = true; 
-        public static bool ShowInfoviewBackground = true; 
+        public static bool ShowWaitingPassengers = false;
+        public static bool ShowTransitVehicles = true;
+        public static bool ShowInfoviewBackground = false; 
 
         protected override void OnCreate()
         {
@@ -97,11 +101,15 @@ namespace BetterTransitView.Systems
             this.showTransitPanelBinding = new ValueBinding<bool>("BetterTransitView", "showTransitPanel", false);
             this.transitLinesDataBinding = new ValueBinding<string>("BetterTransitView", "transitLinesData", "[]");
             this.showStopsAndStationsBinding = new ValueBinding<bool>("BetterTransitView", "showStopsAndStations", true);
-            this.showInfoviewBackgroundBinding = new ValueBinding<bool>("BetterTransitView", "showInfoviewBackground", true);
+            this.showInfoviewBackgroundBinding = new ValueBinding<bool>("BetterTransitView", "showInfoviewBackground", false);
+            this.showWaitingPassengersBinding = new ValueBinding<bool>("BetterTransitView", "showWaitingPassengers", ShowWaitingPassengers);
+            this.showTransitVehiclesBinding = new ValueBinding<bool>("BetterTransitView", "showTransitVehicles", ShowTransitVehicles);
             
             AddBinding(this.showTransitPanelBinding);
             AddBinding(this.transitLinesDataBinding);
             AddBinding(this.showStopsAndStationsBinding);
+            AddBinding(this.showWaitingPassengersBinding);
+            AddBinding(this.showTransitVehiclesBinding);
             AddBinding(this.showInfoviewBackgroundBinding);
 
             // Mock data for initial UI render safety
@@ -142,6 +150,16 @@ namespace BetterTransitView.Systems
             AddBinding(new TriggerBinding<bool>("BetterTransitView", "setShowStopsAndStations", (show) => {
                 ShowStopsAndStations = show;
                 this.showStopsAndStationsBinding.Update(show);
+            }));
+            
+            AddBinding(new TriggerBinding<bool>("BetterTransitView", "setShowWaitingPassengers", (show) => {
+                ShowWaitingPassengers = show;
+                this.showWaitingPassengersBinding.Update(show);
+            }));
+
+            AddBinding(new TriggerBinding<bool>("BetterTransitView", "setShowTransitVehicles", (show) => {
+                ShowTransitVehicles = show;
+                this.showTransitVehiclesBinding.Update(show);
             }));
 
             AddBinding(new TriggerBinding<bool>("BetterTransitView", "setShowInfoviewBackground", (show) => {

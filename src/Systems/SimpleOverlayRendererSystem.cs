@@ -21,6 +21,7 @@ namespace BetterTransitView.Systems
         private TransitUISystem _mTransitUISystem;
         private CameraUpdateSystem m_CameraUpdateSystem; 
         private EntityQuery m_TransitLinesQuery;
+        private EntityQuery m_ResidentQuery;
 
         protected override void OnCreate()
         {
@@ -41,6 +42,9 @@ namespace BetterTransitView.Systems
                     ComponentType.ReadOnly<Game.Tools.Temp>() // Explicit namespace fix
                 }
             });
+            
+            m_ResidentQuery = GetEntityQuery(ComponentType.ReadOnly<Game.Creatures.Resident>(), ComponentType.ReadOnly<Game.Creatures.Queue>());
+            
         }
 
         protected override void OnUpdate()
@@ -101,19 +105,65 @@ namespace BetterTransitView.Systems
             // Schedule Render Job to wait for BOTH the Tally Job AND the Render Buffer
             JobHandle transitHandle = renderJob.Schedule(m_TransitLinesQuery, JobHandle.CombineDependencies(tallyHandle, deps));
 
-            // PASS 3: Draw Stops (Pie Charts)
+            // Pass 2.5: Tally Passengers
+            NativeParallelMultiHashMap<Entity, int> passengerTallies = new NativeParallelMultiHashMap<Entity, int>(10000, Allocator.TempJob);
+            JobHandle passengerTallyHandle = transitHandle; 
+            if (TransitUISystem.ShowWaitingPassengers && TransitUISystem.ShowStopsAndStations)
+            {
+                var passengerTallyJob = new TallyWaitingPassengersJob
+                {
+                    ResidentType = SystemAPI.GetComponentTypeHandle<Game.Creatures.Resident>(true),
+                    QueueBufferType = SystemAPI.GetBufferTypeHandle<Game.Creatures.Queue>(true),
+                    ConnectedLookup = SystemAPI.GetComponentLookup<Game.Routes.Connected>(true),
+                    VisibleStops = stopPositions,
+                    StopPassengerCounts = passengerTallies.AsParallelWriter()
+                };
+                passengerTallyHandle = passengerTallyJob.ScheduleParallel(m_ResidentQuery, transitHandle);
+            }
+            
+            // Grab Camera Position
+            float3 camRight = new float3(1, 0, 0);
+            float3 camUp = new float3(0, 1, 0);
+            if (UnityEngine.Camera.main != null) 
+            {
+                camRight = UnityEngine.Camera.main.transform.right;
+                camUp = UnityEngine.Camera.main.transform.up;
+            }
+            
+            // PASS 3: Draw Stops & Numbers
             var drawStopsJob = new DrawTransitStopsJob
             {
                 overlayBuffer = buffer,
                 stopColors = stopColors,
                 stopPositions = stopPositions,
                 zoomLevel = m_CameraUpdateSystem.zoom,
-                drawStops = TransitUISystem.ShowStopsAndStations
+                drawStops = TransitUISystem.ShowStopsAndStations,
+                showWaiting = TransitUISystem.ShowWaitingPassengers,
+                passengerTallies = passengerTallies,
+                cameraRight = camRight,
+                cameraUp = camUp
             };
+            JobHandle drawStopsHandle = drawStopsJob.Schedule(passengerTallyHandle);
+            
+            // Pass 3.5: Draw Vehicles
+            JobHandle vehicleHandle = drawStopsHandle;
+            if (TransitUISystem.ShowTransitVehicles)
+            {
+                var drawVehiclesJob = new DrawTransitVehiclesJob
+                {
+                    overlayBuffer = buffer,
+                    EntityType = SystemAPI.GetEntityTypeHandle(),
+                    RouteVehicleBufferType = SystemAPI.GetBufferTypeHandle<RouteVehicle>(true),
+                    ColorType = SystemAPI.GetComponentTypeHandle<Game.Routes.Color>(true),
+                    TransformLookup = SystemAPI.GetComponentLookup<Game.Objects.Transform>(true),
+                    InterpolatedTransformLookup = SystemAPI.GetComponentLookup<Game.Rendering.InterpolatedTransform>(true),
+                    HiddenRoutes = hiddenSet,
+                    ZoomLevel = m_CameraUpdateSystem.zoom
+                };
+                vehicleHandle = drawVehiclesJob.ScheduleParallel(m_TransitLinesQuery, drawStopsHandle);
+            }
 
-            JobHandle drawStopsHandle = drawStopsJob.Schedule(transitHandle);
-
-            // PASS 4: Draw Waypoints (Solid circles)
+            // PASS 4: Draw Waypoints
             var drawWaypointsJob = new DrawTransitWaypointsJob
             {
                 overlayBuffer = buffer,
@@ -121,20 +171,21 @@ namespace BetterTransitView.Systems
                 waypointPositions = waypointPositions,
                 zoomLevel = m_CameraUpdateSystem.zoom
             };
-            
-            // Schedule this to wait on drawStopsHandle
             JobHandle waypointsHandle = drawWaypointsJob.Schedule(drawStopsHandle);
 
-            // The final dependency is now just the very last job in the chain
-            JobHandle finalDeps = waypointsHandle;
+            // COMBINE THE DEPENDENCIES
+            JobHandle finalDeps = JobHandle.CombineDependencies(waypointsHandle, vehicleHandle);
 
             // CLEANUP: Dispose of everything safely using the job handles that finished using them
             segmentToRouteMap.Dispose(transitHandle); 
-            hiddenSet.Dispose(drawStopsHandle);
+            hiddenSet.Dispose(finalDeps);
             stopColors.Dispose(drawStopsHandle);
             stopPositions.Dispose(drawStopsHandle);
             waypointColors.Dispose(waypointsHandle);
             waypointPositions.Dispose(waypointsHandle);
+            
+            // Wait for finalDeps before disposing the tallies, just to be safe
+            passengerTallies.Dispose(finalDeps);
 
             Dependency = finalDeps;
             m_OverlayRenderSystem.AddBufferWriter(Dependency);

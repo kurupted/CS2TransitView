@@ -257,8 +257,7 @@ namespace BetterTransitView.Jobs
         }
     }
 
-    // PASS 3: DRAW PIE CHARTS
-    [BurstCompile]
+    // PASS 3: DRAW TRANSIT STOPS
     public struct DrawTransitStopsJob : IJob
     {
         public OverlayRenderSystem.Buffer overlayBuffer;
@@ -266,6 +265,13 @@ namespace BetterTransitView.Jobs
         [ReadOnly] public NativeHashMap<Entity, float3> stopPositions;
         public float zoomLevel;
         public bool drawStops;
+        public bool showWaiting;
+        
+        // Use the actual camera vectors for perfect billboarding
+        public float3 cameraRight; 
+        public float3 cameraUp;
+
+        [ReadOnly] public NativeParallelMultiHashMap<Entity, int> passengerTallies;
 
         public void Execute()
         {
@@ -284,16 +290,14 @@ namespace BetterTransitView.Jobs
             for (int i = 0; i < keys.Length; i++)
             {
                 Entity stopEntity = keys[i];
-                float3 pos = stopPositions[stopEntity];
+                float3 pos = stopPositions[stopEntity] + new float3(0f, 15.0f, 0f);
 
-                // Extract unique colors for this specific stop
                 uniqueColors.Clear();
                 if (stopColors.TryGetFirstValue(stopEntity, out UnityEngine.Color color, out var it))
                 {
                     uniqueColors.Add(color);
                     while (stopColors.TryGetNextValue(out color, ref it))
                     {
-                        // De-duplicate (so overlapping loops of the SAME line don't spawn duplicate slices)
                         bool exists = false;
                         for(int c=0; c<uniqueColors.Length; c++) {
                             if (uniqueColors[c].r == color.r && uniqueColors[c].g == color.g && uniqueColors[c].b == color.b) {
@@ -305,11 +309,17 @@ namespace BetterTransitView.Jobs
                 }
 
                 if (uniqueColors.Length == 0) continue;
+                
+                int count = 0;
+                if (showWaiting && passengerTallies.TryGetFirstValue(stopEntity, out _, out var pIt))
+                {
+                    count = 1; 
+                    while(passengerTallies.TryGetNextValue(out _, ref pIt)) count++;
+                }
 
                 float outerRadius = thickness * 2.5f;
                 float innerRadius = thickness * 1.5f;
 
-                // LAYER 1: Base Black Border
                 overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, outerRadius + (thickness * 0.4f));
 
                 if (uniqueColors.Length == 1)
@@ -321,7 +331,6 @@ namespace BetterTransitView.Jobs
                     int colorsCount = uniqueColors.Length;
                     float ringCenterRadius = (outerRadius + innerRadius) * 0.4f;
                     float ringWidth = outerRadius - innerRadius;
-                    
                     int segmentsPerColor = 10;
                     float anglePerColor = (math.PI * 2f) / colorsCount;
 
@@ -344,21 +353,110 @@ namespace BetterTransitView.Jobs
                     }
                 }
 
-                // LAYER 3: Inner Black Border
                 overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, innerRadius + (thickness * 0.2f));
-
-                // LAYER 4: Bright White Center
                 overlayBuffer.DrawCircle(new UnityEngine.Color(1f, 1f, 1f, 0.9f), pos, innerRadius);
+
+                // --- DRAW NUMBERS ---
+                if (showWaiting && count > 0 && normalizedZoom < 0.6f)
+                {
+                    UnityEngine.Color bgColor = uniqueColors.Length == 1 ? uniqueColors[0] : new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f);
+                    float luminance = (bgColor.r * 0.299f) + (bgColor.g * 0.587f) + (bgColor.b * 0.114f);
+                    UnityEngine.Color textColor = luminance > 0.5f ? new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f) : new UnityEngine.Color(1f, 1f, 1f, 1f);
+
+                    // Use the exact camera vectors
+                    float3 right = cameraRight;
+                    float3 up = cameraUp;
+
+                    float3 indicatorPos = pos + (right * outerRadius * 2.0f);
+                    DrawNumberIndicator(indicatorPos, count, bgColor, textColor, thickness, right, up);
+                }
             }
             
             uniqueColors.Dispose();
             keys.Dispose();
         }
+
+        private void DrawNumberIndicator(float3 center, int number, UnityEngine.Color bgColor, UnityEngine.Color textColor, float thickness, float3 right, float3 up)
+        {
+            NativeList<int> digits = new NativeList<int>(4, Allocator.Temp);
+            int tempNum = number;
+            if (tempNum == 0) digits.Add(0);
+            while (tempNum > 0)
+            {
+                digits.Add(tempNum % 10);
+                tempNum /= 10;
+            }
+            
+            float digitWidth = thickness * 1.2f;
+            float digitHeight = thickness * 2.2f;
+            float spacing = thickness * 0.6f;
+            float lineThickness = thickness * 0.4f;
+
+            float totalWidth = (digits.Length * digitWidth) + ((digits.Length - 1) * spacing);
+            
+            float3 bgStart = center - (right * (totalWidth * 0.5f));
+            float3 bgEnd = center + (right * (totalWidth * 0.5f));
+            overlayBuffer.DrawLine(bgColor, new Colossal.Mathematics.Line3.Segment(bgStart, bgEnd), digitHeight + (thickness * 1.5f));
+            
+            float3 cursor = center + (right * (totalWidth * 0.5f - (digitWidth * 0.5f)));
+
+            for (int i = 0; i < digits.Length; i++)
+            {
+                DrawDigit(cursor, digits[i], textColor, digitWidth, digitHeight, lineThickness, right, up);
+                cursor -= (right * (digitWidth + spacing));
+            }
+
+            digits.Dispose();
+        }
+
+        private void DrawDigit(float3 center, int digit, UnityEngine.Color color, float w, float h, float thickness, float3 right, float3 up)
+        {
+            byte mask = GetDigitMask(digit);
+
+            float hw = w * 0.5f;
+            float hh = h * 0.5f;
+
+            float3 tl = center - (right * hw) + (up * hh);
+            float3 tr = center + (right * hw) + (up * hh);
+            float3 ml = center - (right * hw);
+            float3 mr = center + (right * hw);
+            float3 bl = center - (right * hw) - (up * hh);
+            float3 br = center + (right * hw) - (up * hh);
+
+            float3 i_x = right * (thickness * 0.2f);
+            float3 i_y = up * (thickness * 0.2f);
+
+            if ((mask & 1) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(tl+i_x, tr-i_x), thickness); 
+            if ((mask & 2) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(tr-i_y, mr+i_y), thickness); 
+            if ((mask & 4) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(mr-i_y, br+i_y), thickness); 
+            if ((mask & 8) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(br-i_x, bl+i_x), thickness); 
+            if ((mask & 16) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(bl+i_y, ml-i_y), thickness); 
+            if ((mask & 32) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(ml+i_y, tl-i_y), thickness); 
+            if ((mask & 64) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(ml+i_x, mr-i_x), thickness); 
+        }
+
+        private byte GetDigitMask(int digit)
+        {
+            switch (digit)
+            {
+                case 0: return 0x3F;
+                case 1: return 0x06;
+                case 2: return 0x5B;
+                case 3: return 0x4F;
+                case 4: return 0x66;
+                case 5: return 0x6D;
+                case 6: return 0x7D;
+                case 7: return 0x07;
+                case 8: return 0x7F;
+                case 9: return 0x6F;
+                default: return 0;
+            }
+        }
     }
     
     
     // PASS 4: DRAW WAYPOINTS
-    [BurstCompile]
+    //[BurstCompile]
     public struct DrawTransitWaypointsJob : IJob
     {
         public OverlayRenderSystem.Buffer overlayBuffer;
@@ -394,6 +492,129 @@ namespace BetterTransitView.Jobs
                 }
             }
             keys.Dispose();
+        }
+    }
+    
+    
+    // [BurstCompile]
+    public struct TallyWaitingPassengersJob : IJobChunk
+    {
+        [ReadOnly] public ComponentTypeHandle<Game.Creatures.Resident> ResidentType;
+        [ReadOnly] public BufferTypeHandle<Game.Creatures.Queue> QueueBufferType;
+        [ReadOnly] public ComponentLookup<Game.Routes.Connected> ConnectedLookup;
+        [ReadOnly] public NativeHashMap<Entity, float3> VisibleStops; 
+        
+        public NativeParallelMultiHashMap<Entity, int>.ParallelWriter StopPassengerCounts;
+
+        public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
+        {
+            if (!chunk.Has(ref QueueBufferType)) return;
+
+            BufferAccessor<Game.Creatures.Queue> queues = chunk.GetBufferAccessor(ref QueueBufferType);
+
+            for (int i = 0; i < chunk.Count; i++)
+            {
+                DynamicBuffer<Game.Creatures.Queue> myQueue = queues[i];
+                for (int q = 0; q < myQueue.Length; q++)
+                {
+                    Entity intermediateEntity = myQueue[q].m_TargetEntity; 
+                    Entity actualStop = intermediateEntity;
+
+                    if (ConnectedLookup.TryGetComponent(intermediateEntity, out var connection))
+                    {
+                        actualStop = connection.m_Connected;
+                    }
+
+                    if (VisibleStops.ContainsKey(actualStop))
+                    {
+                        StopPassengerCounts.Add(actualStop, 1);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    
+    //[BurstCompile]
+    public struct DrawTransitVehiclesJob : IJobChunk
+    {
+        public OverlayRenderSystem.Buffer overlayBuffer;
+        [ReadOnly] public EntityTypeHandle EntityType;
+        [ReadOnly] public BufferTypeHandle<RouteVehicle> RouteVehicleBufferType;
+        [ReadOnly] public ComponentTypeHandle<Game.Routes.Color> ColorType;
+        
+        [ReadOnly] public ComponentLookup<Game.Rendering.InterpolatedTransform> InterpolatedTransformLookup;
+        [ReadOnly] public ComponentLookup<Game.Objects.Transform> TransformLookup;
+        
+        [ReadOnly] public NativeHashSet<Entity> HiddenRoutes;
+        public float ZoomLevel;
+
+        public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
+        {
+            if (!chunk.Has(ref RouteVehicleBufferType)) return;
+
+            NativeArray<Entity> entities = chunk.GetNativeArray(EntityType);
+            NativeArray<Game.Routes.Color> colors = chunk.GetNativeArray(ref ColorType);
+            BufferAccessor<RouteVehicle> vehicleAccess = chunk.GetBufferAccessor(ref RouteVehicleBufferType);
+
+            float minZoom = 1600f;
+            float maxZoom = 10000f;
+            float normalizedZoom = math.clamp((ZoomLevel - minZoom) / (maxZoom - minZoom), 0f, 1f);
+            
+            // Scaled down the vehicles slightly as requested
+            float width = math.lerp(10.0f, 45.0f, normalizedZoom); 
+            float halfLength = width * 1.5f; 
+
+            for (int i = 0; i < chunk.Count; i++)
+            {
+                Entity routeEntity = entities[i];
+                if (HiddenRoutes.Contains(routeEntity)) continue;
+
+                UnityEngine.Color routeColor = colors[i].m_Color;
+                DynamicBuffer<RouteVehicle> vehicles = vehicleAccess[i];
+
+                for (int v = 0; v < vehicles.Length; v++)
+                {
+                    Entity vehicleEntity = vehicles[v].m_Vehicle;
+                    float3 pos;
+                    Unity.Mathematics.quaternion rot;
+
+                    if (InterpolatedTransformLookup.TryGetComponent(vehicleEntity, out var iTransform))
+                    {
+                        pos = iTransform.m_Position;
+                        rot = iTransform.m_Rotation;
+                    }
+                    else if (TransformLookup.TryGetComponent(vehicleEntity, out var transform))
+                    {
+                        pos = transform.m_Position;
+                        rot = transform.m_Rotation;
+                    }
+                    else continue;
+
+                    float3 forward = math.mul(rot, new float3(0, 0, 1));
+                    float3 front = pos + (forward * halfLength);
+                    float3 back = pos - (forward * halfLength);
+
+                    float3 verticalOffset = new float3(0f, 3.5f, 0f);
+                    float3 frontRaised = front + verticalOffset;
+                    float3 backRaised = back + verticalOffset;
+
+                    // Stretch the outline line slightly forward and backward so it adds end-caps
+                    float outlineExtra = width * 0.15f; 
+                    float3 frontOutline = frontRaised + (forward * outlineExtra);
+                    float3 backOutline = backRaised - (forward * outlineExtra);
+
+                    // 1. Draw the stretched white outline
+                    overlayBuffer.DrawLine(new UnityEngine.Color(1f, 1f, 1f, 1f), new Colossal.Mathematics.Line3.Segment(backOutline, frontOutline), width + (width * 0.3f));
+
+                    // 2. Prevent Z-fighting
+                    float3 bodyOffset = new float3(0f, 0.2f, 0f);
+                    
+                    // 3. Draw the inner body
+                    overlayBuffer.DrawLine(routeColor, new Colossal.Mathematics.Line3.Segment(backRaised + bodyOffset, frontRaised + bodyOffset), width);
+                }
+            }
         }
     }
 }
