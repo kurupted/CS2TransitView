@@ -258,6 +258,7 @@ namespace BetterTransitView.Jobs
     }
 
     // PASS 3: DRAW TRANSIT STOPS
+    [BurstCompile]
     public struct DrawTransitStopsJob : IJob
     {
         public OverlayRenderSystem.Buffer overlayBuffer;
@@ -267,11 +268,31 @@ namespace BetterTransitView.Jobs
         public bool drawStops;
         public bool showWaiting;
         
-        // Use the actual camera vectors for perfect billboarding
         public float3 cameraRight; 
         public float3 cameraUp;
+        public float3 cameraPosition; 
 
         [ReadOnly] public NativeParallelMultiHashMap<Entity, int> passengerTallies;
+
+        // Data container for our labels so we can sort them before drawing
+        private struct LabelData
+        {
+            public float3 originalPos;
+            public float3 anchorPos;
+            public int count;
+            public UnityEngine.Color bgColor;
+            public UnityEngine.Color textColor;
+            public float sortScore; // Used to order them on-screen
+        }
+
+        // Burst-compatible sorter
+        private struct LabelComparer : System.Collections.Generic.IComparer<LabelData>
+        {
+            public int Compare(LabelData x, LabelData y)
+            {
+                return x.sortScore.CompareTo(y.sortScore);
+            }
+        }
 
         public void Execute()
         {
@@ -286,7 +307,10 @@ namespace BetterTransitView.Jobs
 
             var keys = stopPositions.GetKeyArray(Allocator.Temp);
             var uniqueColors = new NativeList<UnityEngine.Color>(8, Allocator.Temp);
+            
+            NativeList<LabelData> pendingLabels = new NativeList<LabelData>(keys.Length, Allocator.Temp);
 
+            // PASS 1: Draw the Stop Circles and gather label data
             for (int i = 0; i < keys.Length; i++)
             {
                 Entity stopEntity = keys[i];
@@ -320,6 +344,7 @@ namespace BetterTransitView.Jobs
                 float outerRadius = thickness * 2.5f;
                 float innerRadius = thickness * 1.5f;
 
+                // LAYER 1: Base Black Border
                 overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, outerRadius + (thickness * 0.4f));
 
                 if (uniqueColors.Length == 1)
@@ -353,32 +378,100 @@ namespace BetterTransitView.Jobs
                     }
                 }
 
+                // LAYER 3: Inner White/Black Center
                 overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, innerRadius + (thickness * 0.2f));
                 overlayBuffer.DrawCircle(new UnityEngine.Color(1f, 1f, 1f, 0.9f), pos, innerRadius);
 
-                // --- DRAW NUMBERS ---
+                // If we need to draw numbers, save the data to sort later
                 if (showWaiting && count > 0 && normalizedZoom < 0.6f)
                 {
                     UnityEngine.Color bgColor = uniqueColors.Length == 1 ? uniqueColors[0] : new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f);
                     float luminance = (bgColor.r * 0.299f) + (bgColor.g * 0.587f) + (bgColor.b * 0.114f);
                     UnityEngine.Color textColor = luminance > 0.5f ? new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f) : new UnityEngine.Color(1f, 1f, 1f, 1f);
 
-                    // Use the exact camera vectors
                     float3 right = cameraRight;
                     float3 up = cameraUp;
 
-                    float3 indicatorPos = pos + (right * outerRadius * 2.0f);
-                    DrawNumberIndicator(indicatorPos, count, bgColor, textColor, thickness, right, up);
+                    // Calculate the visual height of this stop on the screen using a Dot Product
+                    float score = math.dot(pos, up);
+
+                    pendingLabels.Add(new LabelData {
+                        originalPos = pos,
+                        anchorPos = pos + (right * outerRadius * 1.5f), // start just outside the pie chart
+                        count = count,
+                        bgColor = bgColor,
+                        textColor = textColor,
+                        sortScore = score
+                    });
                 }
             }
+
+            // PASS 2: Sort and Draw Labels
+            pendingLabels.Sort(new LabelComparer());
+            NativeList<float3> drawnLabels = new NativeList<float3>(pendingLabels.Length, Allocator.Temp);
+
+            for (int i = 0; i < pendingLabels.Length; i++)
+            {
+                LabelData label = pendingLabels[i];
+
+                // Pull the label towards the camera a bit
+                float3 toCam = math.normalizesafe(cameraPosition - label.originalPos);
+                float3 shiftedAnchor = label.anchorPos + (toCam * 20.0f);
+                // Push it to the right
+                float3 indicatorPos = shiftedAnchor + (cameraRight * (thickness * 3.0f));
+
+                // Anti-Overlap Logic
+                float checkRadius = thickness * 4.0f; 
+                float shiftAmount = thickness * 4.8f; 
+                
+                int maxStack = 8;
+                for (int stack = 0; stack < maxStack; stack++)
+                {
+                    bool overlap = false;
+                    for (int d = 0; d < drawnLabels.Length; d++)
+                    {
+                        if (math.distance(indicatorPos, drawnLabels[d]) < checkRadius)
+                        {
+                            overlap = true;
+                            break;
+                        }
+                    }
+                    if (!overlap) break; // Found an empty spot!
+                    
+                    indicatorPos += (cameraUp * shiftAmount); // Push it up
+                }
+                drawnLabels.Add(indicatorPos);
+
+                // --- Calculate Pill Width to draw connector line properly ---
+                int tempNum = label.count;
+                int digitsCount = 0;
+                while (tempNum > 0) { digitsCount++; tempNum /= 10; }
+                if (digitsCount == 0) digitsCount = 1;
+
+                float digitWidth = thickness * 1.2f;
+                float spacing = thickness * 0.6f;
+                float totalWidth = (digitsCount * digitWidth) + ((digitsCount - 1) * spacing);
+                float horizontalPadding = thickness * 3.5f; 
+                float bgWidth = totalWidth + horizontalPadding;
+                
+                float3 leftPillEdge = indicatorPos - (cameraRight * (bgWidth * 0.5f));
+
+                // Draw sleek connector line from the stop to the floating label
+                overlayBuffer.DrawLine(label.bgColor, new Colossal.Mathematics.Line3.Segment(label.anchorPos + (toCam * 5.0f), leftPillEdge), thickness * 0.4f);
+
+                // Draw the actual number
+                DrawNumberIndicator(indicatorPos, label.count, label.bgColor, label.textColor, thickness, cameraRight, cameraUp, digitsCount);
+            }
             
+            drawnLabels.Dispose();
+            pendingLabels.Dispose();
             uniqueColors.Dispose();
             keys.Dispose();
         }
 
-        private void DrawNumberIndicator(float3 center, int number, UnityEngine.Color bgColor, UnityEngine.Color textColor, float thickness, float3 right, float3 up)
+        private void DrawNumberIndicator(float3 center, int number, UnityEngine.Color bgColor, UnityEngine.Color textColor, float thickness, float3 right, float3 up, int digitsCount)
         {
-            NativeList<int> digits = new NativeList<int>(4, Allocator.Temp);
+            NativeList<int> digits = new NativeList<int>(digitsCount, Allocator.Temp);
             int tempNum = number;
             if (tempNum == 0) digits.Add(0);
             while (tempNum > 0)
@@ -393,10 +486,14 @@ namespace BetterTransitView.Jobs
             float lineThickness = thickness * 0.4f;
 
             float totalWidth = (digits.Length * digitWidth) + ((digits.Length - 1) * spacing);
+            float horizontalPadding = thickness * 3.5f; 
+            float bgWidth = totalWidth + horizontalPadding;
             
-            float3 bgStart = center - (right * (totalWidth * 0.5f));
-            float3 bgEnd = center + (right * (totalWidth * 0.5f));
-            overlayBuffer.DrawLine(bgColor, new Colossal.Mathematics.Line3.Segment(bgStart, bgEnd), digitHeight + (thickness * 1.5f));
+            float3 bgStart = center - (right * (bgWidth * 0.5f));
+            float3 bgEnd = center + (right * (bgWidth * 0.5f));
+            
+            // Draw background pill
+            overlayBuffer.DrawLine(bgColor, new Colossal.Mathematics.Line3.Segment(bgStart, bgEnd), digitHeight + (thickness * 2.5f));
             
             float3 cursor = center + (right * (totalWidth * 0.5f - (digitWidth * 0.5f)));
 
@@ -456,7 +553,7 @@ namespace BetterTransitView.Jobs
     
     
     // PASS 4: DRAW WAYPOINTS
-    //[BurstCompile]
+    [BurstCompile]
     public struct DrawTransitWaypointsJob : IJob
     {
         public OverlayRenderSystem.Buffer overlayBuffer;
@@ -496,11 +593,13 @@ namespace BetterTransitView.Jobs
     }
     
     
-    // [BurstCompile]
+    [BurstCompile]
     public struct TallyWaitingPassengersJob : IJobChunk
     {
         [ReadOnly] public ComponentTypeHandle<Game.Creatures.Resident> ResidentType;
         [ReadOnly] public BufferTypeHandle<Game.Creatures.Queue> QueueBufferType;
+        [ReadOnly] public ComponentTypeHandle<Game.Creatures.Creature> CreatureType;
+        [ReadOnly] public ComponentTypeHandle<Game.Creatures.HumanCurrentLane> HumanLaneType;
         [ReadOnly] public ComponentLookup<Game.Routes.Connected> ConnectedLookup;
         [ReadOnly] public NativeHashMap<Entity, float3> VisibleStops; 
         
@@ -508,35 +607,78 @@ namespace BetterTransitView.Jobs
 
         public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
         {
-            if (!chunk.Has(ref QueueBufferType)) return;
+            bool hasQueue = chunk.Has(ref QueueBufferType);
+            bool hasCreature = chunk.Has(ref CreatureType);
+            bool hasHumanLanes = chunk.Has(ref HumanLaneType);
 
-            BufferAccessor<Game.Creatures.Queue> queues = chunk.GetBufferAccessor(ref QueueBufferType);
+            if (!hasQueue && !hasCreature) return;
+
+            BufferAccessor<Game.Creatures.Queue> queues = hasQueue ? chunk.GetBufferAccessor(ref QueueBufferType) : default;
+            NativeArray<Game.Creatures.Creature> creatures = hasCreature ? chunk.GetNativeArray(ref CreatureType) : default;
+            NativeArray<Game.Creatures.HumanCurrentLane> humanLanes = hasHumanLanes ? chunk.GetNativeArray(ref HumanLaneType) : default;
 
             for (int i = 0; i < chunk.Count; i++)
             {
-                DynamicBuffer<Game.Creatures.Queue> myQueue = queues[i];
-                for (int q = 0; q < myQueue.Length; q++)
+                Entity matchedStop = Entity.Null;
+
+                // 1. Check Buffer-Based Queue
+                if (hasQueue)
                 {
-                    Entity intermediateEntity = myQueue[q].m_TargetEntity; 
-                    Entity actualStop = intermediateEntity;
-
-                    if (ConnectedLookup.TryGetComponent(intermediateEntity, out var connection))
+                    DynamicBuffer<Game.Creatures.Queue> myQueue = queues[i];
+                    for (int q = 0; q < myQueue.Length; q++)
                     {
-                        actualStop = connection.m_Connected;
-                    }
+                        Entity intermediateEntity = myQueue[q].m_TargetEntity; 
+                        Entity actualStop = intermediateEntity;
 
-                    if (VisibleStops.ContainsKey(actualStop))
-                    {
-                        StopPassengerCounts.Add(actualStop, 1);
-                        break;
+                        if (ConnectedLookup.TryGetComponent(intermediateEntity, out var connection))
+                        {
+                            actualStop = connection.m_Connected;
+                        }
+
+                        if (VisibleStops.ContainsKey(actualStop)) matchedStop = actualStop;
+                        else if (VisibleStops.ContainsKey(intermediateEntity)) matchedStop = intermediateEntity;
+
+                        if (matchedStop != Entity.Null) break;
                     }
+                }
+
+                // 2. Check Component-Based Queue
+                if (matchedStop == Entity.Null && hasCreature)
+                {
+                    Entity queueEntity = creatures[i].m_QueueEntity;
+                    if (queueEntity != Entity.Null)
+                    {
+                        Entity actualStop = queueEntity;
+                        if (ConnectedLookup.TryGetComponent(queueEntity, out var connection))
+                        {
+                            actualStop = connection.m_Connected;
+                        }
+
+                        if (VisibleStops.ContainsKey(actualStop)) matchedStop = actualStop;
+                        else if (VisibleStops.ContainsKey(queueEntity)) matchedStop = queueEntity;
+                    }
+                }
+
+                // 3. Fallback: Physical lane check
+                if (matchedStop == Entity.Null && hasCreature && creatures[i].m_QueueEntity != Entity.Null && hasHumanLanes)
+                {
+                    Entity physicalLane = humanLanes[i].m_Lane;
+                    if (VisibleStops.ContainsKey(physicalLane)) 
+                    {
+                        matchedStop = physicalLane;
+                    }
+                }
+
+                if (matchedStop != Entity.Null)
+                {
+                    StopPassengerCounts.Add(matchedStop, 1);
                 }
             }
         }
     }
 
     
-    //[BurstCompile]
+    [BurstCompile]
     public struct DrawTransitVehiclesJob : IJobChunk
     {
         public OverlayRenderSystem.Buffer overlayBuffer;
@@ -562,9 +704,8 @@ namespace BetterTransitView.Jobs
             float maxZoom = 10000f;
             float normalizedZoom = math.clamp((ZoomLevel - minZoom) / (maxZoom - minZoom), 0f, 1f);
             
-            // Scaled down the vehicles slightly as requested
-            float width = math.lerp(10.0f, 45.0f, normalizedZoom); 
-            float halfLength = width * 1.5f; 
+            float width = math.lerp(7.0f, 22.0f, normalizedZoom); 
+            float halfLength = width * 1.5f;
 
             for (int i = 0; i < chunk.Count; i++)
             {
@@ -596,20 +737,21 @@ namespace BetterTransitView.Jobs
                     float3 front = pos + (forward * halfLength);
                     float3 back = pos - (forward * halfLength);
 
-                    float3 verticalOffset = new float3(0f, 3.5f, 0f);
+                    // A modest, safe offset so it hovers just above the road
+                    float3 verticalOffset = new float3(0f, 2.5f, 0f);
                     float3 frontRaised = front + verticalOffset;
                     float3 backRaised = back + verticalOffset;
 
-                    // Stretch the outline line slightly forward and backward so it adds end-caps
+                    // Stretch the outline line slightly forward and backward so it adds end-caps (border on all 4 sides)
                     float outlineExtra = width * 0.15f; 
                     float3 frontOutline = frontRaised + (forward * outlineExtra);
                     float3 backOutline = backRaised - (forward * outlineExtra);
 
-                    // 1. Draw the stretched white outline
+                    // 1. Draw the white outline (wider and longer)
                     overlayBuffer.DrawLine(new UnityEngine.Color(1f, 1f, 1f, 1f), new Colossal.Mathematics.Line3.Segment(backOutline, frontOutline), width + (width * 0.3f));
 
-                    // 2. Prevent Z-fighting
-                    float3 bodyOffset = new float3(0f, 0.2f, 0f);
+                    // 2. Add a tiny vertical offset to strictly enforce layering over the white background
+                    float3 bodyOffset = new float3(0f, 0.15f, 0f);
                     
                     // 3. Draw the inner body
                     overlayBuffer.DrawLine(routeColor, new Colossal.Mathematics.Line3.Segment(backRaised + bodyOffset, frontRaised + bodyOffset), width);

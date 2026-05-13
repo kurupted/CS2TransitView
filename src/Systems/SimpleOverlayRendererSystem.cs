@@ -43,7 +43,14 @@ namespace BetterTransitView.Systems
                 }
             });
             
-            m_ResidentQuery = GetEntityQuery(ComponentType.ReadOnly<Game.Creatures.Resident>(), ComponentType.ReadOnly<Game.Creatures.Queue>());
+            m_ResidentQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<Game.Creatures.Resident>() },
+                Any = new[] { 
+                    ComponentType.ReadOnly<Game.Creatures.Queue>(),
+                    ComponentType.ReadOnly<Game.Creatures.Creature>() 
+                }
+            });
             
         }
 
@@ -114,6 +121,8 @@ namespace BetterTransitView.Systems
                 {
                     ResidentType = SystemAPI.GetComponentTypeHandle<Game.Creatures.Resident>(true),
                     QueueBufferType = SystemAPI.GetBufferTypeHandle<Game.Creatures.Queue>(true),
+                    CreatureType = SystemAPI.GetComponentTypeHandle<Game.Creatures.Creature>(true),
+                    HumanLaneType = SystemAPI.GetComponentTypeHandle<Game.Creatures.HumanCurrentLane>(true),
                     ConnectedLookup = SystemAPI.GetComponentLookup<Game.Routes.Connected>(true),
                     VisibleStops = stopPositions,
                     StopPassengerCounts = passengerTallies.AsParallelWriter()
@@ -121,13 +130,15 @@ namespace BetterTransitView.Systems
                 passengerTallyHandle = passengerTallyJob.ScheduleParallel(m_ResidentQuery, transitHandle);
             }
             
-            // Grab Camera Position
+            // Grab Camera Data
+            float3 camPos = float3.zero;
             float3 camRight = new float3(1, 0, 0);
             float3 camUp = new float3(0, 1, 0);
             if (UnityEngine.Camera.main != null) 
             {
-                camRight = UnityEngine.Camera.main.transform.right;
-                camUp = UnityEngine.Camera.main.transform.up;
+                camPos = UnityEngine.Camera.main.transform.position; // Needed to pull labels out of buildings
+                camRight = UnityEngine.Camera.main.transform.right;  // Needed to keep text flat to screen
+                camUp = UnityEngine.Camera.main.transform.up;        // Needed to keep text flat to screen
             }
             
             // PASS 3: Draw Stops & Numbers
@@ -141,7 +152,8 @@ namespace BetterTransitView.Systems
                 showWaiting = TransitUISystem.ShowWaitingPassengers,
                 passengerTallies = passengerTallies,
                 cameraRight = camRight,
-                cameraUp = camUp
+                cameraUp = camUp,
+                cameraPosition = camPos
             };
             JobHandle drawStopsHandle = drawStopsJob.Schedule(passengerTallyHandle);
             
@@ -160,7 +172,7 @@ namespace BetterTransitView.Systems
                     HiddenRoutes = hiddenSet,
                     ZoomLevel = m_CameraUpdateSystem.zoom
                 };
-                vehicleHandle = drawVehiclesJob.ScheduleParallel(m_TransitLinesQuery, drawStopsHandle);
+                vehicleHandle = drawVehiclesJob.Schedule(m_TransitLinesQuery, drawStopsHandle);
             }
 
             // PASS 4: Draw Waypoints

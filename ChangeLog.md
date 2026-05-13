@@ -1,1 +1,2 @@
-- Transparency fix
+- New option to show Waiting Passengers count
+- New option to show Transit Vehicles

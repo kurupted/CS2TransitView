@@ -53,7 +53,7 @@ namespace BetterTransitView.Systems
         public static HashSet<Entity> HiddenCustomRoutes = new HashSet<Entity>();
         public static bool ShowStopsAndStations = true; 
         public static bool ShowWaitingPassengers = false;
-        public static bool ShowTransitVehicles = true;
+        public static bool ShowTransitVehicles = false;
         public static bool ShowInfoviewBackground = false; 
 
         protected override void OnCreate()
