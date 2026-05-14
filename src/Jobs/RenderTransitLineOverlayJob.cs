@@ -316,14 +316,16 @@ namespace BetterTransitView.Jobs
             for (int i = 0; i < keys.Length; i++)
             {
                 Entity stopEntity = keys[i];
-                float3 pos = stopPositions[stopEntity] + new float3(0f, 15.0f, 0f);
+                float3 pos = stopPositions[stopEntity] + new float3(0f, 1.2f, 0f);
 
+                // Extract unique colors for this specific stop
                 uniqueColors.Clear();
                 if (stopColors.TryGetFirstValue(stopEntity, out UnityEngine.Color color, out var it))
                 {
                     uniqueColors.Add(color);
                     while (stopColors.TryGetNextValue(out color, ref it))
                     {
+                        // De-duplicate (so overlapping loops of the SAME line don't spawn duplicate slices)
                         bool exists = false;
                         for(int c=0; c<uniqueColors.Length; c++) {
                             if (uniqueColors[c].r == color.r && uniqueColors[c].g == color.g && uniqueColors[c].b == color.b) {
@@ -381,7 +383,9 @@ namespace BetterTransitView.Jobs
                     }
                 }
 
+                // Inner Black Border
                 overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, innerRadius + (thickness * 0.2f));
+                // Bright White Center
                 overlayBuffer.DrawCircle(new UnityEngine.Color(1f, 1f, 1f, 0.9f), pos, innerRadius);
 
                 // Save label data for sorting
@@ -722,7 +726,7 @@ namespace BetterTransitView.Jobs
                     float3 front = pos + (forward * halfLength);
                     float3 back = pos - (forward * halfLength);
 
-                    float3 verticalOffset = new float3(0f, 2.5f, 0f);
+                    float3 verticalOffset = new float3(0f, 0.9f, 0f);
                     float3 frontRaised = front + verticalOffset;
                     float3 backRaised = back + verticalOffset;
 

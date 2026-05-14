@@ -39,7 +39,6 @@ This mod is safe to remove and doesn't add data to your save files.
     <Screenshot Value="Properties\Screenshots\31_stops2.png" />
     <Screenshot Value="Properties\Screenshots\32_waiting.png" />
     <Screenshot Value="Properties\Screenshots\33_waiting2.png" />
-    <Screenshot Value="Properties\Screenshots\40_tool.png" />
     <Screenshot Value="Properties\Screenshots\41_tool2.png" />
     <Screenshot Value="Properties\Screenshots\50_cargo.png" />
 
@@ -67,6 +66,7 @@ This mod is safe to remove and doesn't add data to your save files.
     <ChangeLog>
 - New option to show Waiting Passengers count
 - New option to show Transit Vehicles
+- Improved scaling at middle zoom level
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->

@@ -398,11 +398,11 @@ export const TransitPanel = () => {
                         </div>
 
                         {/* Toggle All Button */}
-                        <button onClick={toggleMasterAll} style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: '1rem solid rgba(255,255,255,0.3)', color: 'white', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', fontSize: '11rem', textTransform: 'uppercase', marginLeft: '4rem' }}>
+                        <button onClick={toggleMasterAll} style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: '1rem solid rgba(255,255,255,0.3)', color: 'white', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', fontSize: '11rem', textTransform: 'uppercase', marginLeft: '25rem' }}>
                             Toggle All
                         </button>
 
-                        <button onClick={() => trigger("BetterTransitView", "toggleTransitCustom", false)} style={{ backgroundColor: ' rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', marginLeft: '5rem', padding: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <button onClick={() => trigger("BetterTransitView", "toggleTransitCustom", false)} style={{ backgroundColor: ' rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', marginLeft: '15rem', padding: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <CloseIcon />
                         </button>
                     </div>
@@ -474,7 +474,7 @@ export const TransitPanel = () => {
                             </button>
                         </div>
     
-                        {/* NEW TOOL BUTTON */}
+                        {/* TOOL BUTTON */}
                         <button
                             onClick={() => trigger("BetterTransitView", "activateTransitTool", activeTab)}
                             style={{ marginLeft: '10rem', backgroundColor: '#4287f5', border: 'none', borderRadius: '4rem', color: 'white', padding: '4rem 10rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6rem', fontSize: '12rem', fontWeight: 'bold' }}
@@ -484,7 +484,6 @@ export const TransitPanel = () => {
                         </button>
     
                     </div>
-                    {/* Fixed Toggle Tab label acting as clickable trigger */}
                     <div onClick={toggleTabAll} style={{ display: 'flex', alignItems: 'center', gap: '8rem', fontSize: '13rem', cursor: 'pointer', color: '#fff' }}>
                         Toggle Tab <CustomCheckbox checked={allVisibleInTab} onChange={() => {}} />
                     </div>
