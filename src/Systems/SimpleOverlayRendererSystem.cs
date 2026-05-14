@@ -22,6 +22,10 @@ namespace BetterTransitView.Systems
         private CameraUpdateSystem m_CameraUpdateSystem; 
         private EntityQuery m_TransitLinesQuery;
         private EntityQuery m_ResidentQuery;
+        
+        private float m_LastPassengerUpdateTime = 0f;
+        private float m_PassengerUpdateInterval = 1.0f; // seconds
+        private NativeParallelMultiHashMap<Entity, int> m_PassengerTallies;
 
         protected override void OnCreate()
         {
@@ -51,6 +55,8 @@ namespace BetterTransitView.Systems
                     ComponentType.ReadOnly<Game.Creatures.Creature>() 
                 }
             });
+            
+            m_PassengerTallies = new NativeParallelMultiHashMap<Entity, int>(20000, Allocator.Persistent);
             
         }
 
@@ -112,22 +118,31 @@ namespace BetterTransitView.Systems
             // Schedule Render Job to wait for BOTH the Tally Job AND the Render Buffer
             JobHandle transitHandle = renderJob.Schedule(m_TransitLinesQuery, JobHandle.CombineDependencies(tallyHandle, deps));
 
-            // Pass 2.5: Tally Passengers (Does not write to buffer, can run parallel with lines)
-            NativeParallelMultiHashMap<Entity, int> passengerTallies = new NativeParallelMultiHashMap<Entity, int>(10000, Allocator.TempJob);
+            // Pass 2.5: Tally Passengers (Throttled using real-world timestamps)
+            float currentTime = UnityEngine.Time.realtimeSinceStartup;
+            bool shouldUpdateTallies = (currentTime - m_LastPassengerUpdateTime) >= m_PassengerUpdateInterval;
+
             JobHandle passengerTallyHandle = transitHandle; 
+            
             if (TransitUISystem.ShowWaitingPassengers && TransitUISystem.ShowStopsAndStations)
             {
-                var passengerTallyJob = new TallyWaitingPassengersJob
+                if (shouldUpdateTallies)
                 {
-                    ResidentType = SystemAPI.GetComponentTypeHandle<Game.Creatures.Resident>(true),
-                    QueueBufferType = SystemAPI.GetBufferTypeHandle<Game.Creatures.Queue>(true),
-                    CreatureType = SystemAPI.GetComponentTypeHandle<Game.Creatures.Creature>(true),
-                    HumanLaneType = SystemAPI.GetComponentTypeHandle<Game.Creatures.HumanCurrentLane>(true),
-                    ConnectedLookup = SystemAPI.GetComponentLookup<Game.Routes.Connected>(true),
-                    VisibleStops = stopPositions,
-                    StopPassengerCounts = passengerTallies.AsParallelWriter()
-                };
-                passengerTallyHandle = passengerTallyJob.ScheduleParallel(m_ResidentQuery, transitHandle);
+                    m_LastPassengerUpdateTime = currentTime; // Save the new timestamp
+                    m_PassengerTallies.Clear(); 
+
+                    var passengerTallyJob = new TallyWaitingPassengersJob
+                    {
+                        ResidentType = SystemAPI.GetComponentTypeHandle<Game.Creatures.Resident>(true),
+                        QueueBufferType = SystemAPI.GetBufferTypeHandle<Game.Creatures.Queue>(true),
+                        CreatureType = SystemAPI.GetComponentTypeHandle<Game.Creatures.Creature>(true),
+                        HumanLaneType = SystemAPI.GetComponentTypeHandle<Game.Creatures.HumanCurrentLane>(true),
+                        ConnectedLookup = SystemAPI.GetComponentLookup<Game.Routes.Connected>(true),
+                        VisibleStops = stopPositions,
+                        StopPassengerCounts = m_PassengerTallies.AsParallelWriter() 
+                    };
+                    passengerTallyHandle = passengerTallyJob.ScheduleParallel(m_ResidentQuery, transitHandle);
+                }
             }
             
             // Pass 3: Draw Vehicles FIRST (Writes to buffer)
@@ -171,7 +186,7 @@ namespace BetterTransitView.Systems
                 zoomLevel = m_CameraUpdateSystem.zoom,
                 drawStops = TransitUISystem.ShowStopsAndStations,
                 showWaiting = TransitUISystem.ShowWaitingPassengers,
-                passengerTallies = passengerTallies,
+                passengerTallies = m_PassengerTallies,
                 cameraRight = camRight,
                 cameraUp = camUp,
                 cameraPosition = camPos 
@@ -200,12 +215,19 @@ namespace BetterTransitView.Systems
             stopPositions.Dispose(drawStopsHandle);
             waypointColors.Dispose(waypointsHandle);
             waypointPositions.Dispose(waypointsHandle);
-            
-            // Wait for finalDeps before disposing the tallies, just to be safe
-            passengerTallies.Dispose(finalDeps);
 
             Dependency = finalDeps;
             m_OverlayRenderSystem.AddBufferWriter(Dependency);
+        }
+        
+        
+        protected override void OnDestroy()
+        {
+            if (m_PassengerTallies.IsCreated)
+            {
+                m_PassengerTallies.Dispose();
+            }
+            base.OnDestroy();
         }
         
 
