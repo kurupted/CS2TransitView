@@ -33,7 +33,6 @@ This mod is safe to remove and doesn't add data to your save files.
     <Thumbnail Value="Properties/Thumbnail.png" />
 
     <!-- Screenshot.  Copied from Screenshots folder.  Include no spaces in file names.  Max file size is 2.1MB.  Can be set multiple times. -->
-    <Screenshot Value="Properties\Screenshots\10_thumbnail.png" />
     <Screenshot Value="Properties\Screenshots\20_main.png" />
     <Screenshot Value="Properties\Screenshots\30_stops1.png" />
     <Screenshot Value="Properties\Screenshots\31_stops2.png" />
