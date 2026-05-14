@@ -282,10 +282,10 @@ namespace BetterTransitView.Jobs
             public int count;
             public UnityEngine.Color bgColor;
             public UnityEngine.Color textColor;
-            public float sortScore; // Used to order them on-screen
+            public float sortScore;
+            public float outerRadius; 
         }
 
-        // Burst-compatible sorter
         private struct LabelComparer : System.Collections.Generic.IComparer<LabelData>
         {
             public int Compare(LabelData x, LabelData y)
@@ -298,16 +298,18 @@ namespace BetterTransitView.Jobs
         {
             if (!drawStops) return;
 
-            float minZoom = 1600f;
-            float maxZoom = 10000f;
-            float normalizedZoom = math.clamp((zoomLevel - minZoom) / (maxZoom - minZoom), 0f, 1f);
+            // NEW MATH: Start zooming closer in, stretch the max limit further out, and use a gentler curve
+            float minZoom = 1000f;
+            float maxZoom = 14000f;
+            float rawZoom = math.clamp((zoomLevel - minZoom) / (maxZoom - minZoom), 0f, 1f);
+            float normalizedZoom = math.pow(rawZoom, 0.7f); 
+            
             float baseWidth = 4.5f;
             float maxWidth = baseWidth * 11f;
             float thickness = math.lerp(baseWidth, maxWidth, normalizedZoom);
 
             var keys = stopPositions.GetKeyArray(Allocator.Temp);
             var uniqueColors = new NativeList<UnityEngine.Color>(8, Allocator.Temp);
-            
             NativeList<LabelData> pendingLabels = new NativeList<LabelData>(keys.Length, Allocator.Temp);
 
             // PASS 1: Draw the Stop Circles and gather label data
@@ -344,7 +346,7 @@ namespace BetterTransitView.Jobs
                 float outerRadius = thickness * 2.5f;
                 float innerRadius = thickness * 1.5f;
 
-                // LAYER 1: Base Black Border
+                // Base Black Border
                 overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, outerRadius + (thickness * 0.4f));
 
                 if (uniqueColors.Length == 1)
@@ -354,8 +356,9 @@ namespace BetterTransitView.Jobs
                 else
                 {
                     int colorsCount = uniqueColors.Length;
-                    float ringCenterRadius = (outerRadius + innerRadius) * 0.4f;
-                    float ringWidth = outerRadius - innerRadius;
+                    float ringCenterRadius = (outerRadius + innerRadius) * 0.5f;
+                    float ringWidth = (outerRadius - innerRadius) * 1.2f; // size multiplier
+                    
                     int segmentsPerColor = 10;
                     float anglePerColor = (math.PI * 2f) / colorsCount;
 
@@ -373,35 +376,31 @@ namespace BetterTransitView.Jobs
                             float3 p1 = pos + new float3(math.cos(a1), 0, math.sin(a1)) * ringCenterRadius;
                             float3 p2 = pos + new float3(math.cos(a2), 0, math.sin(a2)) * ringCenterRadius;
 
-                            overlayBuffer.DrawLine(cColor, new Colossal.Mathematics.Line3.Segment(p1, p2), ringWidth * 1.5f); 
+                            overlayBuffer.DrawLine(cColor, new Colossal.Mathematics.Line3.Segment(p1, p2), ringWidth); 
                         }
                     }
                 }
 
-                // LAYER 3: Inner White/Black Center
                 overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, innerRadius + (thickness * 0.2f));
                 overlayBuffer.DrawCircle(new UnityEngine.Color(1f, 1f, 1f, 0.9f), pos, innerRadius);
 
-                // If we need to draw numbers, save the data to sort later
+                // Save label data for sorting
                 if (showWaiting && count > 0 && normalizedZoom < 0.6f)
                 {
                     UnityEngine.Color bgColor = uniqueColors.Length == 1 ? uniqueColors[0] : new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f);
                     float luminance = (bgColor.r * 0.299f) + (bgColor.g * 0.587f) + (bgColor.b * 0.114f);
                     UnityEngine.Color textColor = luminance > 0.5f ? new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f) : new UnityEngine.Color(1f, 1f, 1f, 1f);
 
-                    float3 right = cameraRight;
-                    float3 up = cameraUp;
-
-                    // Calculate the visual height of this stop on the screen using a Dot Product
-                    float score = math.dot(pos, up);
+                    float score = math.dot(pos, cameraUp);
 
                     pendingLabels.Add(new LabelData {
                         originalPos = pos,
-                        anchorPos = pos + (right * outerRadius * 1.5f), // start just outside the pie chart
+                        anchorPos = pos + (cameraRight * outerRadius * 1.5f),
                         count = count,
                         bgColor = bgColor,
                         textColor = textColor,
-                        sortScore = score
+                        sortScore = score,
+                        outerRadius = outerRadius
                     });
                 }
             }
@@ -413,16 +412,13 @@ namespace BetterTransitView.Jobs
             for (int i = 0; i < pendingLabels.Length; i++)
             {
                 LabelData label = pendingLabels[i];
-
-                // Pull the label towards the camera a bit
                 float3 toCam = math.normalizesafe(cameraPosition - label.originalPos);
-                float3 shiftedAnchor = label.anchorPos + (toCam * 20.0f);
-                // Push it to the right
-                float3 indicatorPos = shiftedAnchor + (cameraRight * (thickness * 3.0f));
+                
+                float3 shiftedAnchor = label.anchorPos + (toCam * 25.0f);
+                float3 indicatorPos = shiftedAnchor + (cameraRight * (thickness * 5.0f));
 
-                // Anti-Overlap Logic
-                float checkRadius = thickness * 4.0f; 
-                float shiftAmount = thickness * 4.8f; 
+                float checkRadius = thickness * 6.0f; 
+                float shiftAmount = thickness * 6.5f; 
                 
                 int maxStack = 8;
                 for (int stack = 0; stack < maxStack; stack++)
@@ -437,12 +433,11 @@ namespace BetterTransitView.Jobs
                         }
                     }
                     if (!overlap) break; // Found an empty spot!
-                    
                     indicatorPos += (cameraUp * shiftAmount); // Push it up
                 }
                 drawnLabels.Add(indicatorPos);
 
-                // --- Calculate Pill Width to draw connector line properly ---
+                // Calculate Pill Width to draw connector line properly
                 int tempNum = label.count;
                 int digitsCount = 0;
                 while (tempNum > 0) { digitsCount++; tempNum /= 10; }
@@ -455,11 +450,9 @@ namespace BetterTransitView.Jobs
                 float bgWidth = totalWidth + horizontalPadding;
                 
                 float3 leftPillEdge = indicatorPos - (cameraRight * (bgWidth * 0.5f));
+                float3 stopEdgeAnchor = label.originalPos + (cameraRight * label.outerRadius) + (toCam * 25.0f);
 
-                // Draw sleek connector line from the stop to the floating label
-                overlayBuffer.DrawLine(label.bgColor, new Colossal.Mathematics.Line3.Segment(label.anchorPos + (toCam * 5.0f), leftPillEdge), thickness * 0.4f);
-
-                // Draw the actual number
+                overlayBuffer.DrawLine(label.bgColor, new Colossal.Mathematics.Line3.Segment(stopEdgeAnchor, leftPillEdge), thickness * 0.4f);
                 DrawNumberIndicator(indicatorPos, label.count, label.bgColor, label.textColor, thickness, cameraRight, cameraUp, digitsCount);
             }
             
@@ -509,7 +502,6 @@ namespace BetterTransitView.Jobs
         private void DrawDigit(float3 center, int digit, UnityEngine.Color color, float w, float h, float thickness, float3 right, float3 up)
         {
             byte mask = GetDigitMask(digit);
-
             float hw = w * 0.5f;
             float hh = h * 0.5f;
 
@@ -536,17 +528,9 @@ namespace BetterTransitView.Jobs
         {
             switch (digit)
             {
-                case 0: return 0x3F;
-                case 1: return 0x06;
-                case 2: return 0x5B;
-                case 3: return 0x4F;
-                case 4: return 0x66;
-                case 5: return 0x6D;
-                case 6: return 0x7D;
-                case 7: return 0x07;
-                case 8: return 0x7F;
-                case 9: return 0x6F;
-                default: return 0;
+                case 0: return 0x3F; case 1: return 0x06; case 2: return 0x5B; case 3: return 0x4F;
+                case 4: return 0x66; case 5: return 0x6D; case 6: return 0x7D; case 7: return 0x07;
+                case 8: return 0x7F; case 9: return 0x6F; default: return 0;
             }
         }
     }
@@ -700,12 +684,13 @@ namespace BetterTransitView.Jobs
             NativeArray<Game.Routes.Color> colors = chunk.GetNativeArray(ref ColorType);
             BufferAccessor<RouteVehicle> vehicleAccess = chunk.GetBufferAccessor(ref RouteVehicleBufferType);
 
-            float minZoom = 1600f;
-            float maxZoom = 10000f;
-            float normalizedZoom = math.clamp((ZoomLevel - minZoom) / (maxZoom - minZoom), 0f, 1f);
+            float minZoom = 1000f;
+            float maxZoom = 14000f;
+            float rawZoom = math.clamp((ZoomLevel - minZoom) / (maxZoom - minZoom), 0f, 1f);
+            float normalizedZoom = math.pow(rawZoom, 0.7f); 
             
-            float width = math.lerp(7.0f, 22.0f, normalizedZoom); 
-            float halfLength = width * 1.5f;
+            float width = math.lerp(6.0f, 20.0f, normalizedZoom); 
+            float halfLength = width * 1.5f; 
 
             for (int i = 0; i < chunk.Count; i++)
             {
@@ -737,7 +722,6 @@ namespace BetterTransitView.Jobs
                     float3 front = pos + (forward * halfLength);
                     float3 back = pos - (forward * halfLength);
 
-                    // A modest, safe offset so it hovers just above the road
                     float3 verticalOffset = new float3(0f, 2.5f, 0f);
                     float3 frontRaised = front + verticalOffset;
                     float3 backRaised = back + verticalOffset;
@@ -747,16 +731,13 @@ namespace BetterTransitView.Jobs
                     float3 frontOutline = frontRaised + (forward * outlineExtra);
                     float3 backOutline = backRaised - (forward * outlineExtra);
 
-                    // 1. Draw the white outline (wider and longer)
                     overlayBuffer.DrawLine(new UnityEngine.Color(1f, 1f, 1f, 1f), new Colossal.Mathematics.Line3.Segment(backOutline, frontOutline), width + (width * 0.3f));
 
-                    // 2. Add a tiny vertical offset to strictly enforce layering over the white background
                     float3 bodyOffset = new float3(0f, 0.15f, 0f);
-                    
-                    // 3. Draw the inner body
                     overlayBuffer.DrawLine(routeColor, new Colossal.Mathematics.Line3.Segment(backRaised + bodyOffset, frontRaised + bodyOffset), width);
                 }
             }
         }
     }
+    
 }

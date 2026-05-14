@@ -112,7 +112,7 @@ namespace BetterTransitView.Systems
             // Schedule Render Job to wait for BOTH the Tally Job AND the Render Buffer
             JobHandle transitHandle = renderJob.Schedule(m_TransitLinesQuery, JobHandle.CombineDependencies(tallyHandle, deps));
 
-            // Pass 2.5: Tally Passengers
+            // Pass 2.5: Tally Passengers (Does not write to buffer, can run parallel with lines)
             NativeParallelMultiHashMap<Entity, int> passengerTallies = new NativeParallelMultiHashMap<Entity, int>(10000, Allocator.TempJob);
             JobHandle passengerTallyHandle = transitHandle; 
             if (TransitUISystem.ShowWaitingPassengers && TransitUISystem.ShowStopsAndStations)
@@ -130,18 +130,39 @@ namespace BetterTransitView.Systems
                 passengerTallyHandle = passengerTallyJob.ScheduleParallel(m_ResidentQuery, transitHandle);
             }
             
+            // Pass 3: Draw Vehicles FIRST (Writes to buffer)
+            JobHandle vehicleHandle = transitHandle;
+            if (TransitUISystem.ShowTransitVehicles)
+            {
+                var drawVehiclesJob = new DrawTransitVehiclesJob
+                {
+                    overlayBuffer = buffer,
+                    EntityType = SystemAPI.GetEntityTypeHandle(),
+                    RouteVehicleBufferType = SystemAPI.GetBufferTypeHandle<RouteVehicle>(true),
+                    ColorType = SystemAPI.GetComponentTypeHandle<Game.Routes.Color>(true),
+                    InterpolatedTransformLookup = SystemAPI.GetComponentLookup<Game.Rendering.InterpolatedTransform>(true),
+                    TransformLookup = SystemAPI.GetComponentLookup<Game.Objects.Transform>(true),
+                    HiddenRoutes = hiddenSet,
+                    ZoomLevel = m_CameraUpdateSystem.zoom
+                };
+                vehicleHandle = drawVehiclesJob.Schedule(m_TransitLinesQuery, transitHandle);
+            }
+
             // Grab Camera Data
             float3 camPos = float3.zero;
             float3 camRight = new float3(1, 0, 0);
             float3 camUp = new float3(0, 1, 0);
             if (UnityEngine.Camera.main != null) 
             {
-                camPos = UnityEngine.Camera.main.transform.position; // Needed to pull labels out of buildings
-                camRight = UnityEngine.Camera.main.transform.right;  // Needed to keep text flat to screen
-                camUp = UnityEngine.Camera.main.transform.up;        // Needed to keep text flat to screen
+                camPos = UnityEngine.Camera.main.transform.position;
+                camRight = UnityEngine.Camera.main.transform.right;
+                camUp = UnityEngine.Camera.main.transform.up;
             }
-            
-            // PASS 3: Draw Stops & Numbers
+
+            // Combine dependencies so Stops wait for BOTH tallies to finish AND vehicles to finish drawing
+            JobHandle preStopsHandle = JobHandle.CombineDependencies(passengerTallyHandle, vehicleHandle);
+
+            // PASS 4: Draw Stops SECOND (Writes to buffer, layering ON TOP of vehicles)
             var drawStopsJob = new DrawTransitStopsJob
             {
                 overlayBuffer = buffer,
@@ -153,29 +174,12 @@ namespace BetterTransitView.Systems
                 passengerTallies = passengerTallies,
                 cameraRight = camRight,
                 cameraUp = camUp,
-                cameraPosition = camPos
+                cameraPosition = camPos 
             };
-            JobHandle drawStopsHandle = drawStopsJob.Schedule(passengerTallyHandle);
-            
-            // Pass 3.5: Draw Vehicles
-            JobHandle vehicleHandle = drawStopsHandle;
-            if (TransitUISystem.ShowTransitVehicles)
-            {
-                var drawVehiclesJob = new DrawTransitVehiclesJob
-                {
-                    overlayBuffer = buffer,
-                    EntityType = SystemAPI.GetEntityTypeHandle(),
-                    RouteVehicleBufferType = SystemAPI.GetBufferTypeHandle<RouteVehicle>(true),
-                    ColorType = SystemAPI.GetComponentTypeHandle<Game.Routes.Color>(true),
-                    TransformLookup = SystemAPI.GetComponentLookup<Game.Objects.Transform>(true),
-                    InterpolatedTransformLookup = SystemAPI.GetComponentLookup<Game.Rendering.InterpolatedTransform>(true),
-                    HiddenRoutes = hiddenSet,
-                    ZoomLevel = m_CameraUpdateSystem.zoom
-                };
-                vehicleHandle = drawVehiclesJob.Schedule(m_TransitLinesQuery, drawStopsHandle);
-            }
 
-            // PASS 4: Draw Waypoints
+            JobHandle drawStopsHandle = drawStopsJob.Schedule(preStopsHandle);
+
+            // PASS 5: Draw Waypoints THIRD
             var drawWaypointsJob = new DrawTransitWaypointsJob
             {
                 overlayBuffer = buffer,
@@ -183,11 +187,12 @@ namespace BetterTransitView.Systems
                 waypointPositions = waypointPositions,
                 zoomLevel = m_CameraUpdateSystem.zoom
             };
+            
             JobHandle waypointsHandle = drawWaypointsJob.Schedule(drawStopsHandle);
 
-            // COMBINE THE DEPENDENCIES
-            JobHandle finalDeps = JobHandle.CombineDependencies(waypointsHandle, vehicleHandle);
-
+            // The final dependency
+            JobHandle finalDeps = waypointsHandle;
+            
             // CLEANUP: Dispose of everything safely using the job handles that finished using them
             segmentToRouteMap.Dispose(transitHandle); 
             hiddenSet.Dispose(finalDeps);
