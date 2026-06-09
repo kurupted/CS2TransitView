@@ -282,13 +282,13 @@ namespace BetterTransitView.Jobs
         private struct LabelData
         {
             public float3 originalPos;
-            public float3 anchorPos;
             public int count;
             public int waitTime; 
             public UnityEngine.Color bgColor;
             public UnityEngine.Color textColor;
             public float sortScore;
             public float outerRadius; 
+            public int side; // 1 for right, -1 for left
         }
 
         private struct LabelComparer : System.Collections.Generic.IComparer<LabelData>
@@ -297,6 +297,12 @@ namespace BetterTransitView.Jobs
             {
                 return x.sortScore.CompareTo(y.sortScore);
             }
+        }
+
+        private struct DrawnLabel
+        {
+            public float3 center;
+            public float width;
         }
 
         public void Execute()
@@ -323,6 +329,9 @@ namespace BetterTransitView.Jobs
                 Entity stopEntity = keys[i];
                 float3 pos = stopPositions[stopEntity] + new float3(0f, 1.2f, 0f);
 
+                // Alternating side logic! (1 = Right, -1 = Left)
+                int sideMultiplier = (stopEntity.Index % 2 == 0) ? 1 : -1;
+
                 // Extract unique colors for this specific stop
                 uniqueColors.Clear();
                 if (stopColors.TryGetFirstValue(stopEntity, out UnityEngine.Color color, out var it))
@@ -330,7 +339,7 @@ namespace BetterTransitView.Jobs
                     uniqueColors.Add(color);
                     while (stopColors.TryGetNextValue(out color, ref it))
                     {
-                        // De-duplicate (so overlapping loops of the SAME line don't spawn duplicate slices)
+                        // De-duplicate
                         bool exists = false;
                         for(int c=0; c<uniqueColors.Length; c++) {
                             if (uniqueColors[c].r == color.r && uniqueColors[c].g == color.g && uniqueColors[c].b == color.b) {
@@ -401,7 +410,7 @@ namespace BetterTransitView.Jobs
                                     Entity routeEntity = owner.m_Owner;
                                     if (!HiddenRoutes.Contains(routeEntity) && ColorLookup.TryGetComponent(routeEntity, out var routeColor))
                                     {
-                                        AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, passengers.m_AverageWaitingTime, routeColor.m_Color, outerRadius);
+                                        AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, passengers.m_AverageWaitingTime, routeColor.m_Color, outerRadius, sideMultiplier);
                                     }
                                 }
                             }
@@ -414,7 +423,7 @@ namespace BetterTransitView.Jobs
                             Entity routeEntity = owner.m_Owner;
                             if (!HiddenRoutes.Contains(routeEntity) && ColorLookup.TryGetComponent(routeEntity, out var routeColor))
                             {
-                                AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, passengers.m_AverageWaitingTime, routeColor.m_Color, outerRadius);
+                                AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, passengers.m_AverageWaitingTime, routeColor.m_Color, outerRadius, sideMultiplier);
                             }
                         }
                     }
@@ -423,59 +432,73 @@ namespace BetterTransitView.Jobs
 
             // PASS 2: Sort and Draw Labels
             pendingLabels.Sort(new LabelComparer());
-            NativeList<float3> drawnLabels = new NativeList<float3>(pendingLabels.Length, Allocator.Temp);
+            NativeList<DrawnLabel> drawnLabels = new NativeList<DrawnLabel>(pendingLabels.Length, Allocator.Temp);
+
+            float shiftAmount = labelThickness * 4.8f; 
+            float horizontalGap = labelThickness * 14.0f; // Significantly push labels away from the stop
 
             for (int i = 0; i < pendingLabels.Length; i++)
             {
                 LabelData label = pendingLabels[i];
                 float3 toCam = math.normalizesafe(cameraPosition - label.originalPos);
                 
-                float3 shiftedAnchor = label.anchorPos + (toCam * 25.0f);
-                float3 indicatorPos = shiftedAnchor + (cameraRight * (labelThickness * 5.0f));
-
-                float checkRadius = labelThickness * 6.0f; 
-                float shiftAmount = labelThickness * 6.5f; 
+                float bgWidth = GetLabelWidth(label.count, label.waitTime, labelThickness);
                 
-                int maxStack = 8;
+                // Position base is now offset massively to either Left (-1) or Right (+1) based on the label.side
+                float3 indicatorPos = label.originalPos + (cameraRight * (label.side * horizontalGap)) + (toCam * 25.0f);
+                
+                int maxStack = 20; 
                 for (int stack = 0; stack < maxStack; stack++)
                 {
                     bool overlap = false;
                     for (int d = 0; d < drawnLabels.Length; d++)
                     {
-                        if (math.distance(indicatorPos, drawnLabels[d]) < checkRadius)
+                        DrawnLabel other = drawnLabels[d];
+                        
+                        float3 diff = indicatorPos - other.center;
+                        float distRight = math.abs(math.dot(diff, cameraRight));
+                        float distUp = math.abs(math.dot(diff, cameraUp));
+                        
+                        float minRightDist = (bgWidth * 0.5f) + (other.width * 0.5f) + (labelThickness * 1.0f); 
+                        float minUpDist = labelThickness * 4.5f; 
+                        
+                        if (distRight < minRightDist && distUp < minUpDist)
                         {
                             overlap = true;
                             break;
                         }
                     }
-                    if (!overlap) break; // Found an empty spot!
-                    indicatorPos += (cameraUp * shiftAmount); // Push it up
+                    if (!overlap) break; 
+                    indicatorPos += (cameraUp * shiftAmount); 
                 }
-                drawnLabels.Add(indicatorPos);
-
-		        // Calculate Pill Width to draw connector line properly
-                int tempCount = label.count;
-                int countDigits = 0;
-                if (tempCount == 0) countDigits = 1;
-                while (tempCount > 0) { countDigits++; tempCount /= 10; }
-
-                int tempWait = label.waitTime;
-                int waitDigits = 0;
-                if (tempWait == 0) waitDigits = 1;
-                while (tempWait > 0) { waitDigits++; tempWait /= 10; }
-
-                int totalChars = countDigits + 3 + waitDigits + 1;
-
-                float digitWidth = labelThickness * 1.2f;
-                float spacing = labelThickness * 0.6f;
-                float totalWidth = (totalChars * digitWidth) + ((totalChars - 1) * spacing);
-                float horizontalPadding = labelThickness * 3.5f; 
-                float bgWidth = totalWidth + horizontalPadding;
                 
-                float3 leftPillEdge = indicatorPos - (cameraRight * (bgWidth * 0.5f));
-                float3 stopEdgeAnchor = label.originalPos + (cameraRight * label.outerRadius) + (toCam * 25.0f);
+                drawnLabels.Add(new DrawnLabel { center = indicatorPos, width = bgWidth });
 
-                overlayBuffer.DrawLine(label.bgColor, new Colossal.Mathematics.Line3.Segment(stopEdgeAnchor, leftPillEdge), labelThickness * 0.4f);
+                // CONNECTOR LINE MATH
+                // 1. Calculate the center of the stop (in camera projection space)
+                float3 stopCenterCam = label.originalPos + (toCam * 25.0f);
+                
+                // 2. Identify the inner edge of the label pill we are connecting to
+                float3 pillEdge = indicatorPos - (cameraRight * (label.side * bgWidth * 0.5f));
+                
+                // 3. Aim from the center towards the pill edge
+                float3 vectorToEdge = pillEdge - stopCenterCam;
+                float distToEdge = math.length(vectorToEdge);
+                
+                if (distToEdge > 0.001f)
+                {
+                    float3 dir = vectorToEdge / distToEdge;
+                    
+                    // 4. Start drawing outside the circle radius (1.3x so it doesn't bleed inside)
+                    float startOffset = label.outerRadius * 1.3f;
+                    
+                    if (distToEdge > startOffset) // Ensure we have room to draw a line
+                    {
+                        float3 lineStart = stopCenterCam + (dir * startOffset);
+                        overlayBuffer.DrawLine(label.bgColor, new Colossal.Mathematics.Line3.Segment(lineStart, pillEdge), labelThickness * 0.4f);
+                    }
+                }
+
                 DrawLabelIndicator(indicatorPos, label.count, label.waitTime, label.bgColor, label.textColor, labelThickness, cameraRight, cameraUp);
             }
             
@@ -485,7 +508,42 @@ namespace BetterTransitView.Jobs
             keys.Dispose();
         }
 
-        private void AddPendingLabel(ref NativeList<LabelData> list, float3 pos, int count, int wait, UnityEngine.Color bgColor, float outerRadius)
+        private float GetCharWidth(char c, float baseDigitWidth)
+        {
+            if (c == ' ') return baseDigitWidth * 0.4f;
+            if (c == '-') return baseDigitWidth * 0.5f;
+            if (c == 'm') return baseDigitWidth * 1.1f; // 'm' is slightly wider than a standard number
+            return baseDigitWidth;
+        }
+
+        private float GetLabelWidth(int count, int waitTime, float labelThickness)
+        {
+            int tempCount = count;
+            int countDigits = 0;
+            if (tempCount == 0) countDigits = 1;
+            while (tempCount > 0) { countDigits++; tempCount /= 10; }
+
+            int tempWait = waitTime;
+            int waitDigits = 0;
+            if (tempWait == 0) waitDigits = 1;
+            while (tempWait > 0) { waitDigits++; tempWait /= 10; }
+
+            float digitWidth = labelThickness * 1.2f;
+            float spacing = labelThickness * 0.6f;
+            
+            float spaceW = GetCharWidth(' ', digitWidth);
+            float hyphenW = GetCharWidth('-', digitWidth);
+            float mW = GetCharWidth('m', digitWidth);
+
+            float totalWidth = (countDigits * digitWidth) + spaceW + hyphenW + spaceW + (waitDigits * digitWidth) + mW;
+            int totalChars = countDigits + 3 + waitDigits + 1; // 3 chars for " - ", 1 for "m"
+            totalWidth += (totalChars - 1) * spacing;
+
+            float horizontalPadding = labelThickness * 3.5f; 
+            return totalWidth + horizontalPadding;
+        }
+
+        private void AddPendingLabel(ref NativeList<LabelData> list, float3 pos, int count, int wait, UnityEngine.Color bgColor, float outerRadius, int side)
         {
             float luminance = (bgColor.r * 0.299f) + (bgColor.g * 0.587f) + (bgColor.b * 0.114f);
             UnityEngine.Color textColor = luminance > 0.5f ? new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f) : new UnityEngine.Color(1f, 1f, 1f, 1f);
@@ -493,13 +551,13 @@ namespace BetterTransitView.Jobs
 
             list.Add(new LabelData {
                 originalPos = pos,
-                anchorPos = pos + (cameraRight * outerRadius * 1.5f),
                 count = count,
                 waitTime = wait, 
                 bgColor = bgColor,
                 textColor = textColor,
                 sortScore = score,
-                outerRadius = outerRadius
+                outerRadius = outerRadius,
+                side = side
             });
         }
 
@@ -542,7 +600,14 @@ namespace BetterTransitView.Jobs
             float spacing = thickness * 0.6f;
             float lineThickness = thickness * 0.4f;
 
-            float totalWidth = (chars.Length * digitWidth) + ((chars.Length - 1) * spacing);
+            // Calculate total dynamic width for the background pill
+            float totalWidth = 0f;
+            for (int i = 0; i < chars.Length; i++)
+            {
+                totalWidth += GetCharWidth(chars[i], digitWidth);
+                if (i < chars.Length - 1) totalWidth += spacing;
+            }
+
             float horizontalPadding = thickness * 3.5f; 
             float bgWidth = totalWidth + horizontalPadding;
             
@@ -552,12 +617,19 @@ namespace BetterTransitView.Jobs
             // Draw background pill
             overlayBuffer.DrawLine(bgColor, new Colossal.Mathematics.Line3.Segment(bgStart, bgEnd), digitHeight + (thickness * 2.5f));
             
-            float3 cursor = center - (right * (totalWidth * 0.5f - (digitWidth * 0.5f)));
+            // Start the text rendering cursor at the far left edge of the text block
+            float3 cursor = center - (right * (totalWidth * 0.5f));
 
             for (int i = 0; i < chars.Length; i++)
             {
-                DrawChar(cursor, chars[i], textColor, digitWidth, digitHeight, lineThickness, right, up);
-                cursor += (right * (digitWidth + spacing));
+                float charW = GetCharWidth(chars[i], digitWidth);
+                
+                // Since the character is drawn from its center point, we shift the cursor by half its width
+                float3 charCenter = cursor + (right * (charW * 0.5f));
+                DrawChar(charCenter, chars[i], textColor, charW, digitHeight, lineThickness, right, up);
+                
+                // Advance the cursor to the end of this character, plus the spacing gap
+                cursor += (right * (charW + spacing));
             }
 
             chars.Dispose();
@@ -567,9 +639,31 @@ namespace BetterTransitView.Jobs
         {
             if (c == ' ') return;
 
-            byte mask = GetCharMask(c);
             float hw = w * 0.5f;
             float hh = h * 0.5f;
+
+            if (c == 'm')
+            {
+                float3 c_ml = center - (right * hw);
+                float3 c_mr = center + (right * hw);
+                float3 c_bl = center - (right * hw) - (up * hh);
+                float3 c_br = center + (right * hw) - (up * hh);
+                float3 c_bm = center - (up * hh);
+                
+                // Left leg (bottom to middle)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(c_bl, c_ml), thickness); 
+                // Middle leg (bottom to middle)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(c_bm, center), thickness); 
+                // Right leg (bottom to middle)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(c_br, c_mr), thickness); 
+                // Left top curve (left to center)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(c_ml, center), thickness); 
+                // Right top curve (center to right)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(center, c_mr), thickness); 
+                return;
+            }
+
+            byte mask = GetCharMask(c);
 
             float3 tl = center - (right * hw) + (up * hh);
             float3 tr = center + (right * hw) + (up * hh);
@@ -590,15 +684,6 @@ namespace BetterTransitView.Jobs
             if ((mask & 16) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(bl+i_y, ml-i_y), thickness); 
             if ((mask & 32) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(ml+i_y, tl-i_y), thickness); 
             if ((mask & 64) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(ml+i_x, mr-i_x), thickness); 
-
-            if ((mask & 128) != 0) 
-            {
-                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(bl, tl), thickness); 
-                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(bm, tm), thickness); 
-                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(br, tr), thickness); 
-                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(tl, tm), thickness); 
-                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(tm, tr), thickness); 
-            }
         }
 
         private byte GetCharMask(char c)
@@ -609,7 +694,6 @@ namespace BetterTransitView.Jobs
                 case '4': return 0x66; case '5': return 0x6D; case '6': return 0x7D; case '7': return 0x07;
                 case '8': return 0x7F; case '9': return 0x6F;
                 case '-': return 0x40;
-                case 'm': return 0x80; 
                 default: return 0;
             }
         }

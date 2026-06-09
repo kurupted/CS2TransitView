@@ -63,8 +63,10 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Change log.  Copied from ChangeLog.md file.  Supports minimal markdown subset. -->
     <ChangeLog>
-- Fixed waiting passenger counts. Previous version included cims on their way to the stop, since I reused code from my Traffic Spy mod.
-- Now also include average waiting time in the info labels, so it displays: Number of people waiting - Average wait time
+- This update is all about the Waiting Passenger labels:
+- Fixed the counts. Previously it included cims on their way to the stop, since I reused code from my Traffic Spy mod. Now it just uses the native count.
+- Added the average waiting time to the info labels, so now it displays: "Number of people waiting - Average wait time"
+- Improved label positioning and scaling
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->
