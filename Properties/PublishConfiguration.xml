@@ -49,7 +49,7 @@ This mod is safe to remove and doesn't add data to your save files.
     <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/better-transit-view.1914977/" />
 
     <!-- Version of the mod.  Copied from assembly Version. -->
-    <ModVersion Value="1.3.1" />
+    <ModVersion Value="1.3.2" />
 
     <!-- Recommended version of the base game to use the mod. -->
     <GameVersion Value="1.5.*" />
@@ -63,10 +63,8 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Change log.  Copied from ChangeLog.md file.  Supports minimal markdown subset. -->
     <ChangeLog>
-- New option to show Waiting Passengers count
-- New option to show Transit Vehicles
-- Improved scaling at middle zoom level
-(Version 1.3.1: Performance optimization)
+- Fixed waiting passenger counts. Previous version included cims on their way to the stop, since I reused code from my Traffic Spy mod.
+- Now also include average waiting time in the info labels, so it displays: Number of people waiting - Average wait time
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->

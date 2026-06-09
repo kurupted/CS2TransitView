@@ -1,4 +1,2 @@
-- New option to show Waiting Passengers count
-- New option to show Transit Vehicles
-- Improved scaling at middle zoom level
-(Version 1.3.1: Performance optimization)
+- Fixed waiting passenger counts. Previous version included cims on their way to the stop, since I reused code from my Traffic Spy mod.
+- Now also include average waiting time in the info labels, so it displays: Number of people waiting - Average wait time
