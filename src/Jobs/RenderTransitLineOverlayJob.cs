@@ -268,22 +268,27 @@ namespace BetterTransitView.Jobs
         public bool drawStops;
         public bool showWaiting;
         
+        // Using camera vectors so the labels float and face the camera
         public float3 cameraRight; 
         public float3 cameraUp;
         public float3 cameraPosition; 
 
-        [ReadOnly] public NativeParallelMultiHashMap<Entity, int> passengerTallies;
+        [ReadOnly] public BufferLookup<Game.Routes.ConnectedRoute> ConnectedRouteLookup;
+        [ReadOnly] public ComponentLookup<Game.Routes.WaitingPassengers> WaitingPassengersLookup;
+        [ReadOnly] public ComponentLookup<Game.Common.Owner> OwnerLookup;
+        [ReadOnly] public ComponentLookup<Game.Routes.Color> ColorLookup;
+        [ReadOnly] public NativeHashSet<Entity> HiddenRoutes;
 
-        // Data container for our labels so we can sort them before drawing
         private struct LabelData
         {
             public float3 originalPos;
-            public float3 anchorPos;
             public int count;
+            public int waitTime; 
             public UnityEngine.Color bgColor;
             public UnityEngine.Color textColor;
             public float sortScore;
             public float outerRadius; 
+            public int side; // 1 for right, -1 for left
         }
 
         private struct LabelComparer : System.Collections.Generic.IComparer<LabelData>
@@ -294,29 +299,38 @@ namespace BetterTransitView.Jobs
             }
         }
 
+        private struct DrawnLabel
+        {
+            public float3 center;
+            public float width;
+        }
+
         public void Execute()
         {
             if (!drawStops) return;
 
-            // NEW MATH: Start zooming closer in, stretch the max limit further out, and use a gentler curve
             float minZoom = 1000f;
             float maxZoom = 14000f;
             float rawZoom = math.clamp((zoomLevel - minZoom) / (maxZoom - minZoom), 0f, 1f);
             float normalizedZoom = math.pow(rawZoom, 0.7f); 
             
             float baseWidth = 4.5f;
-            float maxWidth = baseWidth * 11f;
-            float thickness = math.lerp(baseWidth, maxWidth, normalizedZoom);
+            
+            float stopThickness = math.lerp(baseWidth, baseWidth * 11.0f, normalizedZoom); // circles
+            float labelThickness = math.lerp(baseWidth, baseWidth * 7.0f, normalizedZoom); // labels
 
             var keys = stopPositions.GetKeyArray(Allocator.Temp);
             var uniqueColors = new NativeList<UnityEngine.Color>(8, Allocator.Temp);
             NativeList<LabelData> pendingLabels = new NativeList<LabelData>(keys.Length, Allocator.Temp);
 
-            // PASS 1: Draw the Stop Circles and gather label data
+            // PASS 1: Draw the Stop Circles
             for (int i = 0; i < keys.Length; i++)
             {
                 Entity stopEntity = keys[i];
                 float3 pos = stopPositions[stopEntity] + new float3(0f, 1.2f, 0f);
+
+                // Alternating side logic! (1 = Right, -1 = Left)
+                int sideMultiplier = (stopEntity.Index % 2 == 0) ? 1 : -1;
 
                 // Extract unique colors for this specific stop
                 uniqueColors.Clear();
@@ -325,7 +339,7 @@ namespace BetterTransitView.Jobs
                     uniqueColors.Add(color);
                     while (stopColors.TryGetNextValue(out color, ref it))
                     {
-                        // De-duplicate (so overlapping loops of the SAME line don't spawn duplicate slices)
+                        // De-duplicate
                         bool exists = false;
                         for(int c=0; c<uniqueColors.Length; c++) {
                             if (uniqueColors[c].r == color.r && uniqueColors[c].g == color.g && uniqueColors[c].b == color.b) {
@@ -337,19 +351,12 @@ namespace BetterTransitView.Jobs
                 }
 
                 if (uniqueColors.Length == 0) continue;
-                
-                int count = 0;
-                if (showWaiting && passengerTallies.TryGetFirstValue(stopEntity, out _, out var pIt))
-                {
-                    count = 1; 
-                    while(passengerTallies.TryGetNextValue(out _, ref pIt)) count++;
-                }
 
-                float outerRadius = thickness * 2.5f;
-                float innerRadius = thickness * 1.5f;
+                float outerRadius = stopThickness * 2.5f;
+                float innerRadius = stopThickness * 1.5f;
 
                 // Base Black Border
-                overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, outerRadius + (thickness * 0.4f));
+                overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, outerRadius + (stopThickness * 0.4f));
 
                 if (uniqueColors.Length == 1)
                 {
@@ -384,80 +391,115 @@ namespace BetterTransitView.Jobs
                 }
 
                 // Inner Black Border
-                overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, innerRadius + (thickness * 0.2f));
+                overlayBuffer.DrawCircle(new UnityEngine.Color(0f, 0f, 0f, 0.8f), pos, innerRadius + (stopThickness * 0.2f));
                 // Bright White Center
                 overlayBuffer.DrawCircle(new UnityEngine.Color(1f, 1f, 1f, 0.9f), pos, innerRadius);
 
-                // Save label data for sorting
-                if (showWaiting && count > 0 && normalizedZoom < 0.6f)
+                // GATHER STATS
+                if (showWaiting && normalizedZoom < 0.6f)
                 {
-                    UnityEngine.Color bgColor = uniqueColors.Length == 1 ? uniqueColors[0] : new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f);
-                    float luminance = (bgColor.r * 0.299f) + (bgColor.g * 0.587f) + (bgColor.b * 0.114f);
-                    UnityEngine.Color textColor = luminance > 0.5f ? new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f) : new UnityEngine.Color(1f, 1f, 1f, 1f);
-
-                    float score = math.dot(pos, cameraUp);
-
-                    pendingLabels.Add(new LabelData {
-                        originalPos = pos,
-                        anchorPos = pos + (cameraRight * outerRadius * 1.5f),
-                        count = count,
-                        bgColor = bgColor,
-                        textColor = textColor,
-                        sortScore = score,
-                        outerRadius = outerRadius
-                    });
+                    if (ConnectedRouteLookup.TryGetBuffer(stopEntity, out var connectedRoutes))
+                    {
+                        for (int c = 0; c < connectedRoutes.Length; c++)
+                        {
+                            Entity waypoint = connectedRoutes[c].m_Waypoint;
+                            if (WaitingPassengersLookup.TryGetComponent(waypoint, out var passengers) && passengers.m_Count > 0)
+                            {
+                                if (OwnerLookup.TryGetComponent(waypoint, out var owner))
+                                {
+                                    Entity routeEntity = owner.m_Owner;
+                                    if (!HiddenRoutes.Contains(routeEntity) && ColorLookup.TryGetComponent(routeEntity, out var routeColor))
+                                    {
+                                        AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, passengers.m_AverageWaitingTime, routeColor.m_Color, outerRadius, sideMultiplier);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (WaitingPassengersLookup.TryGetComponent(stopEntity, out var passengers) && passengers.m_Count > 0)
+                    {
+                        if (OwnerLookup.TryGetComponent(stopEntity, out var owner))
+                        {
+                            Entity routeEntity = owner.m_Owner;
+                            if (!HiddenRoutes.Contains(routeEntity) && ColorLookup.TryGetComponent(routeEntity, out var routeColor))
+                            {
+                                AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, passengers.m_AverageWaitingTime, routeColor.m_Color, outerRadius, sideMultiplier);
+                            }
+                        }
+                    }
                 }
             }
 
             // PASS 2: Sort and Draw Labels
             pendingLabels.Sort(new LabelComparer());
-            NativeList<float3> drawnLabels = new NativeList<float3>(pendingLabels.Length, Allocator.Temp);
+            NativeList<DrawnLabel> drawnLabels = new NativeList<DrawnLabel>(pendingLabels.Length, Allocator.Temp);
+
+            float shiftAmount = labelThickness * 4.8f; 
+            float horizontalGap = labelThickness * 14.0f; // Significantly push labels away from the stop
 
             for (int i = 0; i < pendingLabels.Length; i++)
             {
                 LabelData label = pendingLabels[i];
                 float3 toCam = math.normalizesafe(cameraPosition - label.originalPos);
                 
-                float3 shiftedAnchor = label.anchorPos + (toCam * 25.0f);
-                float3 indicatorPos = shiftedAnchor + (cameraRight * (thickness * 5.0f));
-
-                float checkRadius = thickness * 6.0f; 
-                float shiftAmount = thickness * 6.5f; 
+                float bgWidth = GetLabelWidth(label.count, label.waitTime, labelThickness);
                 
-                int maxStack = 8;
+                // Position base is now offset massively to either Left (-1) or Right (+1) based on the label.side
+                float3 indicatorPos = label.originalPos + (cameraRight * (label.side * horizontalGap)) + (toCam * 25.0f);
+                
+                int maxStack = 20; 
                 for (int stack = 0; stack < maxStack; stack++)
                 {
                     bool overlap = false;
                     for (int d = 0; d < drawnLabels.Length; d++)
                     {
-                        if (math.distance(indicatorPos, drawnLabels[d]) < checkRadius)
+                        DrawnLabel other = drawnLabels[d];
+                        
+                        float3 diff = indicatorPos - other.center;
+                        float distRight = math.abs(math.dot(diff, cameraRight));
+                        float distUp = math.abs(math.dot(diff, cameraUp));
+                        
+                        float minRightDist = (bgWidth * 0.5f) + (other.width * 0.5f) + (labelThickness * 1.0f); 
+                        float minUpDist = labelThickness * 4.5f; 
+                        
+                        if (distRight < minRightDist && distUp < minUpDist)
                         {
                             overlap = true;
                             break;
                         }
                     }
-                    if (!overlap) break; // Found an empty spot!
-                    indicatorPos += (cameraUp * shiftAmount); // Push it up
+                    if (!overlap) break; 
+                    indicatorPos += (cameraUp * shiftAmount); 
                 }
-                drawnLabels.Add(indicatorPos);
-
-                // Calculate Pill Width to draw connector line properly
-                int tempNum = label.count;
-                int digitsCount = 0;
-                while (tempNum > 0) { digitsCount++; tempNum /= 10; }
-                if (digitsCount == 0) digitsCount = 1;
-
-                float digitWidth = thickness * 1.2f;
-                float spacing = thickness * 0.6f;
-                float totalWidth = (digitsCount * digitWidth) + ((digitsCount - 1) * spacing);
-                float horizontalPadding = thickness * 3.5f; 
-                float bgWidth = totalWidth + horizontalPadding;
                 
-                float3 leftPillEdge = indicatorPos - (cameraRight * (bgWidth * 0.5f));
-                float3 stopEdgeAnchor = label.originalPos + (cameraRight * label.outerRadius) + (toCam * 25.0f);
+                drawnLabels.Add(new DrawnLabel { center = indicatorPos, width = bgWidth });
 
-                overlayBuffer.DrawLine(label.bgColor, new Colossal.Mathematics.Line3.Segment(stopEdgeAnchor, leftPillEdge), thickness * 0.4f);
-                DrawNumberIndicator(indicatorPos, label.count, label.bgColor, label.textColor, thickness, cameraRight, cameraUp, digitsCount);
+                // CONNECTOR LINE MATH
+                // 1. Calculate the center of the stop (in camera projection space)
+                float3 stopCenterCam = label.originalPos + (toCam * 25.0f);
+                
+                // 2. Identify the inner edge of the label pill we are connecting to
+                float3 pillEdge = indicatorPos - (cameraRight * (label.side * bgWidth * 0.5f));
+                
+                // 3. Aim from the center towards the pill edge
+                float3 vectorToEdge = pillEdge - stopCenterCam;
+                float distToEdge = math.length(vectorToEdge);
+                
+                if (distToEdge > 0.001f)
+                {
+                    float3 dir = vectorToEdge / distToEdge;
+                    
+                    // 4. Start drawing outside the circle radius (1.3x so it doesn't bleed inside)
+                    float startOffset = label.outerRadius * 1.3f;
+                    
+                    if (distToEdge > startOffset) // Ensure we have room to draw a line
+                    {
+                        float3 lineStart = stopCenterCam + (dir * startOffset);
+                        overlayBuffer.DrawLine(label.bgColor, new Colossal.Mathematics.Line3.Segment(lineStart, pillEdge), labelThickness * 0.4f);
+                    }
+                }
+
+                DrawLabelIndicator(indicatorPos, label.count, label.waitTime, label.bgColor, label.textColor, labelThickness, cameraRight, cameraUp);
             }
             
             drawnLabels.Dispose();
@@ -466,23 +508,106 @@ namespace BetterTransitView.Jobs
             keys.Dispose();
         }
 
-        private void DrawNumberIndicator(float3 center, int number, UnityEngine.Color bgColor, UnityEngine.Color textColor, float thickness, float3 right, float3 up, int digitsCount)
+        private float GetCharWidth(char c, float baseDigitWidth)
         {
-            NativeList<int> digits = new NativeList<int>(digitsCount, Allocator.Temp);
-            int tempNum = number;
-            if (tempNum == 0) digits.Add(0);
-            while (tempNum > 0)
-            {
-                digits.Add(tempNum % 10);
-                tempNum /= 10;
-            }
+            if (c == ' ') return baseDigitWidth * 0.4f;
+            if (c == '-') return baseDigitWidth * 0.5f;
+            if (c == 'm') return baseDigitWidth * 1.1f; // 'm' is slightly wider than a standard number
+            return baseDigitWidth;
+        }
+
+        private float GetLabelWidth(int count, int waitTime, float labelThickness)
+        {
+            int tempCount = count;
+            int countDigits = 0;
+            if (tempCount == 0) countDigits = 1;
+            while (tempCount > 0) { countDigits++; tempCount /= 10; }
+
+            int tempWait = waitTime;
+            int waitDigits = 0;
+            if (tempWait == 0) waitDigits = 1;
+            while (tempWait > 0) { waitDigits++; tempWait /= 10; }
+
+            float digitWidth = labelThickness * 1.2f;
+            float spacing = labelThickness * 0.6f;
             
+            float spaceW = GetCharWidth(' ', digitWidth);
+            float hyphenW = GetCharWidth('-', digitWidth);
+            float mW = GetCharWidth('m', digitWidth);
+
+            float totalWidth = (countDigits * digitWidth) + spaceW + hyphenW + spaceW + (waitDigits * digitWidth) + mW;
+            int totalChars = countDigits + 3 + waitDigits + 1; // 3 chars for " - ", 1 for "m"
+            totalWidth += (totalChars - 1) * spacing;
+
+            float horizontalPadding = labelThickness * 3.5f; 
+            return totalWidth + horizontalPadding;
+        }
+
+        private void AddPendingLabel(ref NativeList<LabelData> list, float3 pos, int count, int wait, UnityEngine.Color bgColor, float outerRadius, int side)
+        {
+            float luminance = (bgColor.r * 0.299f) + (bgColor.g * 0.587f) + (bgColor.b * 0.114f);
+            UnityEngine.Color textColor = luminance > 0.5f ? new UnityEngine.Color(0.1f, 0.1f, 0.1f, 1f) : new UnityEngine.Color(1f, 1f, 1f, 1f);
+            float score = math.dot(pos, cameraUp);
+
+            list.Add(new LabelData {
+                originalPos = pos,
+                count = count,
+                waitTime = wait, 
+                bgColor = bgColor,
+                textColor = textColor,
+                sortScore = score,
+                outerRadius = outerRadius,
+                side = side
+            });
+        }
+
+        private void DrawLabelIndicator(float3 center, int count, int waitTime, UnityEngine.Color bgColor, UnityEngine.Color textColor, float thickness, float3 right, float3 up)
+        {
+            NativeList<char> chars = new NativeList<char>(16, Allocator.Temp);
+
+            int tempNum = count;
+            if (tempNum == 0) chars.Add('0');
+            else
+            {
+                NativeList<char> rev = new NativeList<char>(8, Allocator.Temp);
+                while (tempNum > 0)
+                {
+                    rev.Add((char)('0' + (tempNum % 10)));
+                    tempNum /= 10;
+                }
+                for (int i = rev.Length - 1; i >= 0; i--) chars.Add(rev[i]);
+            }
+
+            chars.Add(' '); chars.Add('-'); chars.Add(' ');
+
+            int tempWait = waitTime;
+            if (tempWait == 0) chars.Add('0');
+            else
+            {
+                NativeList<char> rev = new NativeList<char>(8, Allocator.Temp);
+                while (tempWait > 0)
+                {
+                    rev.Add((char)('0' + (tempWait % 10)));
+                    tempWait /= 10;
+                }
+                for (int i = rev.Length - 1; i >= 0; i--) chars.Add(rev[i]);
+            }
+
+            chars.Add('m');
+
             float digitWidth = thickness * 1.2f;
             float digitHeight = thickness * 2.2f;
             float spacing = thickness * 0.6f;
             float lineThickness = thickness * 0.4f;
 
-            float totalWidth = (digits.Length * digitWidth) + ((digits.Length - 1) * spacing);
+            // Calculate total dynamic width for the background pill
+            float totalWidth = 0f;
+            for (int i = 0; i < chars.Length; i++)
+            {
+                totalWidth += GetCharWidth(chars[i], digitWidth);
+                if (i < chars.Length - 1) totalWidth += spacing;
+            }
+
             float horizontalPadding = thickness * 3.5f; 
             float bgWidth = totalWidth + horizontalPadding;
             
@@ -492,22 +617,53 @@ namespace BetterTransitView.Jobs
             // Draw background pill
             overlayBuffer.DrawLine(bgColor, new Colossal.Mathematics.Line3.Segment(bgStart, bgEnd), digitHeight + (thickness * 2.5f));
             
-            float3 cursor = center + (right * (totalWidth * 0.5f - (digitWidth * 0.5f)));
+            // Start the text rendering cursor at the far left edge of the text block
+            float3 cursor = center - (right * (totalWidth * 0.5f));
 
-            for (int i = 0; i < digits.Length; i++)
+            for (int i = 0; i < chars.Length; i++)
             {
-                DrawDigit(cursor, digits[i], textColor, digitWidth, digitHeight, lineThickness, right, up);
-                cursor -= (right * (digitWidth + spacing));
+                float charW = GetCharWidth(chars[i], digitWidth);
+                
+                // Since the character is drawn from its center point, we shift the cursor by half its width
+                float3 charCenter = cursor + (right * (charW * 0.5f));
+                DrawChar(charCenter, chars[i], textColor, charW, digitHeight, lineThickness, right, up);
+                
+                // Advance the cursor to the end of this character, plus the spacing gap
+                cursor += (right * (charW + spacing));
             }
 
-            digits.Dispose();
+            chars.Dispose();
         }
 
-        private void DrawDigit(float3 center, int digit, UnityEngine.Color color, float w, float h, float thickness, float3 right, float3 up)
+        private void DrawChar(float3 center, char c, UnityEngine.Color color, float w, float h, float thickness, float3 right, float3 up)
         {
-            byte mask = GetDigitMask(digit);
+            if (c == ' ') return;
+
             float hw = w * 0.5f;
             float hh = h * 0.5f;
+
+            if (c == 'm')
+            {
+                float3 c_ml = center - (right * hw);
+                float3 c_mr = center + (right * hw);
+                float3 c_bl = center - (right * hw) - (up * hh);
+                float3 c_br = center + (right * hw) - (up * hh);
+                float3 c_bm = center - (up * hh);
+                
+                // Left leg (bottom to middle)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(c_bl, c_ml), thickness); 
+                // Middle leg (bottom to middle)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(c_bm, center), thickness); 
+                // Right leg (bottom to middle)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(c_br, c_mr), thickness); 
+                // Left top curve (left to center)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(c_ml, center), thickness); 
+                // Right top curve (center to right)
+                overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(center, c_mr), thickness); 
+                return;
+            }
+
+            byte mask = GetCharMask(c);
 
             float3 tl = center - (right * hw) + (up * hh);
             float3 tr = center + (right * hw) + (up * hh);
@@ -515,6 +671,8 @@ namespace BetterTransitView.Jobs
             float3 mr = center + (right * hw);
             float3 bl = center - (right * hw) - (up * hh);
             float3 br = center + (right * hw) - (up * hh);
+            float3 tm = center + (up * hh);
+            float3 bm = center - (up * hh);
 
             float3 i_x = right * (thickness * 0.2f);
             float3 i_y = up * (thickness * 0.2f);
@@ -528,13 +686,15 @@ namespace BetterTransitView.Jobs
             if ((mask & 64) != 0) overlayBuffer.DrawLine(color, new Colossal.Mathematics.Line3.Segment(ml+i_x, mr-i_x), thickness); 
         }
 
-        private byte GetDigitMask(int digit)
+        private byte GetCharMask(char c)
         {
-            switch (digit)
+            switch (c)
             {
-                case 0: return 0x3F; case 1: return 0x06; case 2: return 0x5B; case 3: return 0x4F;
-                case 4: return 0x66; case 5: return 0x6D; case 6: return 0x7D; case 7: return 0x07;
-                case 8: return 0x7F; case 9: return 0x6F; default: return 0;
+                case '0': return 0x3F; case '1': return 0x06; case '2': return 0x5B; case '3': return 0x4F;
+                case '4': return 0x66; case '5': return 0x6D; case '6': return 0x7D; case '7': return 0x07;
+                case '8': return 0x7F; case '9': return 0x6F;
+                case '-': return 0x40;
+                default: return 0;
             }
         }
     }
@@ -581,89 +741,6 @@ namespace BetterTransitView.Jobs
     }
     
     
-    [BurstCompile]
-    public struct TallyWaitingPassengersJob : IJobChunk
-    {
-        [ReadOnly] public ComponentTypeHandle<Game.Creatures.Resident> ResidentType;
-        [ReadOnly] public BufferTypeHandle<Game.Creatures.Queue> QueueBufferType;
-        [ReadOnly] public ComponentTypeHandle<Game.Creatures.Creature> CreatureType;
-        [ReadOnly] public ComponentTypeHandle<Game.Creatures.HumanCurrentLane> HumanLaneType;
-        [ReadOnly] public ComponentLookup<Game.Routes.Connected> ConnectedLookup;
-        [ReadOnly] public NativeHashMap<Entity, float3> VisibleStops; 
-        
-        public NativeParallelMultiHashMap<Entity, int>.ParallelWriter StopPassengerCounts;
-
-        public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
-        {
-            bool hasQueue = chunk.Has(ref QueueBufferType);
-            bool hasCreature = chunk.Has(ref CreatureType);
-            bool hasHumanLanes = chunk.Has(ref HumanLaneType);
-
-            if (!hasQueue && !hasCreature) return;
-
-            BufferAccessor<Game.Creatures.Queue> queues = hasQueue ? chunk.GetBufferAccessor(ref QueueBufferType) : default;
-            NativeArray<Game.Creatures.Creature> creatures = hasCreature ? chunk.GetNativeArray(ref CreatureType) : default;
-            NativeArray<Game.Creatures.HumanCurrentLane> humanLanes = hasHumanLanes ? chunk.GetNativeArray(ref HumanLaneType) : default;
-
-            for (int i = 0; i < chunk.Count; i++)
-            {
-                Entity matchedStop = Entity.Null;
-
-                // 1. Check Buffer-Based Queue
-                if (hasQueue)
-                {
-                    DynamicBuffer<Game.Creatures.Queue> myQueue = queues[i];
-                    for (int q = 0; q < myQueue.Length; q++)
-                    {
-                        Entity intermediateEntity = myQueue[q].m_TargetEntity; 
-                        Entity actualStop = intermediateEntity;
-
-                        if (ConnectedLookup.TryGetComponent(intermediateEntity, out var connection))
-                        {
-                            actualStop = connection.m_Connected;
-                        }
-
-                        if (VisibleStops.ContainsKey(actualStop)) matchedStop = actualStop;
-                        else if (VisibleStops.ContainsKey(intermediateEntity)) matchedStop = intermediateEntity;
-
-                        if (matchedStop != Entity.Null) break;
-                    }
-                }
-
-                // 2. Check Component-Based Queue
-                if (matchedStop == Entity.Null && hasCreature)
-                {
-                    Entity queueEntity = creatures[i].m_QueueEntity;
-                    if (queueEntity != Entity.Null)
-                    {
-                        Entity actualStop = queueEntity;
-                        if (ConnectedLookup.TryGetComponent(queueEntity, out var connection))
-                        {
-                            actualStop = connection.m_Connected;
-                        }
-
-                        if (VisibleStops.ContainsKey(actualStop)) matchedStop = actualStop;
-                        else if (VisibleStops.ContainsKey(queueEntity)) matchedStop = queueEntity;
-                    }
-                }
-
-                // 3. Fallback: Physical lane check
-                if (matchedStop == Entity.Null && hasCreature && creatures[i].m_QueueEntity != Entity.Null && hasHumanLanes)
-                {
-                    Entity physicalLane = humanLanes[i].m_Lane;
-                    if (VisibleStops.ContainsKey(physicalLane)) 
-                    {
-                        matchedStop = physicalLane;
-                    }
-                }
-
-                if (matchedStop != Entity.Null)
-                {
-                    StopPassengerCounts.Add(matchedStop, 1);
-                }
-            }
-        }
-    }
 
     
     [BurstCompile]

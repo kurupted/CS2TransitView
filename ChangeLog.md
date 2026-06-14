@@ -1,4 +1,4 @@
-- New option to show Waiting Passengers count
-- New option to show Transit Vehicles
-- Improved scaling at middle zoom level
-(Version 1.3.1: Performance optimization)
+- This update is all about the Waiting Passenger labels:
+- Counts now mirror the game's native counts. Previously it was including cims *on their way* to the stop, since I reused code from my Traffic Spy mod.
+- Added the average waiting time to the labels, so now it displays: "Number of people waiting - Average wait time"
+- Improved label positioning and scaling
