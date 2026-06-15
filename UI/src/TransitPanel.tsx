@@ -303,7 +303,7 @@ export const TransitPanel = () => {
 
         let comparison = 0;
         if (typeof valA === 'string' && typeof valB === 'string') {
-            comparison = valA.localeCompare(valB);
+            comparison = compareNames(valA, valB);
         } else {
             comparison = (valA as number) > (valB as number) ? 1 : ((valA as number) < (valB as number) ? -1 : 0);
         }
@@ -563,3 +563,38 @@ export const TransitPanel = () => {
 </div>
 );
 };
+
+function tokenize(s: string): (number | string)[] {
+    return s.replaceAll(" ", "").match(/[0-9]+|[^0-9]+/g)?.map(t => /^[0-9]+$/.test(t) ? parseInt(t) : t) ?? [];
+}
+
+function compareNames(a: string, b: string): number {
+  const ta = tokenize(a);
+  const tb = tokenize(b);
+
+  for (let i = 0; i < Math.max(ta.length, tb.length); i++) {
+    // Ones with shorter tokens go first
+    if (i >= ta.length) return -1;
+    if (i >= tb.length) return 1;
+
+    const ai = ta[i];
+    const bi = tb[i];
+
+    const aIsNum = typeof ai === "number";
+    const bIsNum = typeof bi === "number";
+
+    // Numbers go before letters like the vanilla route viewer
+    if (aIsNum && !bIsNum) return -1;
+    if (!aIsNum && bIsNum) return 1;
+
+    // same type: compare
+    if (aIsNum && bIsNum) {
+      if (ai !== bi) return ai - bi;
+    } else {
+      const cmp = (ai as string).localeCompare(bi as string);
+      if (cmp !== 0) return cmp;
+    }
+  }
+
+  return 0;
+}
