@@ -1,1 +1,2 @@
 - Added a picker tool for identifying routes on the map.
+- Added configurable defaults and option to hide average wait times.

@@ -51,6 +51,8 @@ namespace BetterTransitView.Systems
         private bool m_WasToggleKeyDown = false;
         private int m_EnforceInfoviewFrames = 0;
         private Game.Tools.ToolBaseSystem m_LastActiveTool;
+        private bool m_HasInitializedDefaults = false;
+        private HashSet<Entity> m_SavedHiddenRoutes = new HashSet<Entity>();
 
         // Public Statics for the Render Jobs
         public static HashSet<Entity> HiddenCustomRoutes = new HashSet<Entity>();
@@ -104,7 +106,8 @@ namespace BetterTransitView.Systems
             this.showTransitPanelBinding = new ValueBinding<bool>("BetterTransitView", "showTransitPanel", false);
             this.transitLinesDataBinding = new ValueBinding<string>("BetterTransitView", "transitLinesData", "[]");
             this.showStopsAndStationsBinding = new ValueBinding<bool>("BetterTransitView", "showStopsAndStations", true);
-            this.showInfoviewBackgroundBinding = new ValueBinding<bool>("BetterTransitView", "showInfoviewBackground", false);
+            ShowInfoviewBackground = BetterTransitView.ModSettings.ModSettings.Instance.MapModeActivatedByDefault;
+            this.showInfoviewBackgroundBinding = new ValueBinding<bool>("BetterTransitView", "showInfoviewBackground", ShowInfoviewBackground);
             this.showWaitingPassengersBinding = new ValueBinding<bool>("BetterTransitView", "showWaitingPassengers", ShowWaitingPassengers);
             this.showTransitVehiclesBinding = new ValueBinding<bool>("BetterTransitView", "showTransitVehicles", ShowTransitVehicles);
             this.selectedTransitLineBinding = new ValueBinding<int>("BetterTransitView", "selectedTransitLine", 0);
@@ -564,16 +567,48 @@ namespace BetterTransitView.Systems
             this.showTransitPanelBinding.Update(true);
             
             HiddenCustomRoutes.Clear();
-            using var entities = m_TransitLinesQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
-            foreach(var e in entities) {
-                if (!EntityManager.HasComponent<Game.Prefabs.PrefabRef>(e)) continue;
-                var prefabRef = EntityManager.GetComponentData<Game.Prefabs.PrefabRef>(e);
-                if (EntityManager.TryGetComponent<Game.Prefabs.TransportLineData>(prefabRef.m_Prefab, out var lineData)) {
-                    // Hide Cargo AND Airplanes by default
-                    if (lineData.m_CargoTransport || lineData.m_TransportType == Game.Prefabs.TransportType.Airplane) {
-                        HiddenCustomRoutes.Add(e);
+
+            if (m_HasInitializedDefaults)
+            {
+                foreach (var e in m_SavedHiddenRoutes) HiddenCustomRoutes.Add(e);
+            }
+            else
+            {
+                using var entities = m_TransitLinesQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+                foreach(var e in entities) {
+                    if (!EntityManager.HasComponent<Game.Prefabs.PrefabRef>(e)) continue;
+                    var prefabRef = EntityManager.GetComponentData<Game.Prefabs.PrefabRef>(e);
+                    if (EntityManager.TryGetComponent<Game.Prefabs.TransportLineData>(prefabRef.m_Prefab, out var lineData)) {
+                        if (lineData.m_CargoTransport) {
+                            if (!BetterTransitView.ModSettings.ModSettings.Instance.DefaultCargoVisible) {
+                                HiddenCustomRoutes.Add(e);
+                            }
+                        } else {
+                            switch (lineData.m_TransportType) {
+                                case Game.Prefabs.TransportType.Bus:
+                                    if (!BetterTransitView.ModSettings.ModSettings.Instance.DefaultBusVisible) HiddenCustomRoutes.Add(e);
+                                    break;
+                                case Game.Prefabs.TransportType.Train:
+                                    if (!BetterTransitView.ModSettings.ModSettings.Instance.DefaultTrainVisible) HiddenCustomRoutes.Add(e);
+                                    break;
+                                case Game.Prefabs.TransportType.Tram:
+                                    if (!BetterTransitView.ModSettings.ModSettings.Instance.DefaultTramVisible) HiddenCustomRoutes.Add(e);
+                                    break;
+                                case Game.Prefabs.TransportType.Subway:
+                                    if (!BetterTransitView.ModSettings.ModSettings.Instance.DefaultSubwayVisible) HiddenCustomRoutes.Add(e);
+                                    break;
+                                case Game.Prefabs.TransportType.Ship:
+                                case Game.Prefabs.TransportType.Ferry:
+                                    if (!BetterTransitView.ModSettings.ModSettings.Instance.DefaultShipVisible) HiddenCustomRoutes.Add(e);
+                                    break;
+                                case Game.Prefabs.TransportType.Airplane:
+                                    if (!BetterTransitView.ModSettings.ModSettings.Instance.DefaultAirplaneVisible) HiddenCustomRoutes.Add(e);
+                                    break;
+                            }
+                        }
                     }
                 }
+                m_HasInitializedDefaults = true;
             }
 
             UpdateTransitLinesData(); 
@@ -591,6 +626,10 @@ namespace BetterTransitView.Systems
             m_ActiveTransitMode = "none";
             this.showTransitPanelBinding.Update(false);
             m_InfoviewsUISystem.SetActiveInfoview(Entity.Null);
+            
+            m_SavedHiddenRoutes.Clear();
+            foreach (var e in HiddenCustomRoutes) m_SavedHiddenRoutes.Add(e);
+            
             HiddenCustomRoutes.Clear();
             SyncVanillaVisibilityToUI();
         }

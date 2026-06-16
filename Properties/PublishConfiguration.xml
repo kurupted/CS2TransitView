@@ -64,6 +64,7 @@ This mod is safe to remove and doesn't add data to your save files.
     <!-- Change log.  Copied from ChangeLog.md file.  Supports minimal markdown subset. -->
     <ChangeLog>
 - Added a picker tool for identifying routes on the map.
+- Added configurable defaults and option to hide average wait times.
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->

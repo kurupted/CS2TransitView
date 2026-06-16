@@ -1,4 +1,4 @@
-﻿using Colossal.Mathematics;
+using Colossal.Mathematics;
 using Game.Common;
 using Game.Net;
 using Game.Rendering;
@@ -139,6 +139,7 @@ namespace BetterTransitView.Systems
                 zoomLevel = m_CameraUpdateSystem.zoom,
                 drawStops = TransitUISystem.ShowStopsAndStations,
                 showWaiting = TransitUISystem.ShowWaitingPassengers,
+                showAverageWaitTime = BetterTransitView.ModSettings.ModSettings.Instance.ShowAverageWaitTime,
                 cameraRight = camRight,
                 cameraUp = camUp,
                 cameraPosition = camPos,

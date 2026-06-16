@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Game.Net;
 using Game.Prefabs;
 using Game.Rendering;
@@ -267,6 +267,7 @@ namespace BetterTransitView.Jobs
         public float zoomLevel;
         public bool drawStops;
         public bool showWaiting;
+        public bool showAverageWaitTime;
         
         // Using camera vectors so the labels float and face the camera
         public float3 cameraRight; 
@@ -410,7 +411,7 @@ namespace BetterTransitView.Jobs
                                     Entity routeEntity = owner.m_Owner;
                                     if (!HiddenRoutes.Contains(routeEntity) && ColorLookup.TryGetComponent(routeEntity, out var routeColor))
                                     {
-                                        AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, passengers.m_AverageWaitingTime, routeColor.m_Color, outerRadius, sideMultiplier);
+                                        AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, showAverageWaitTime ? passengers.m_AverageWaitingTime : -1, routeColor.m_Color, outerRadius, sideMultiplier);
                                     }
                                 }
                             }
@@ -423,7 +424,7 @@ namespace BetterTransitView.Jobs
                             Entity routeEntity = owner.m_Owner;
                             if (!HiddenRoutes.Contains(routeEntity) && ColorLookup.TryGetComponent(routeEntity, out var routeColor))
                             {
-                                AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, passengers.m_AverageWaitingTime, routeColor.m_Color, outerRadius, sideMultiplier);
+                                AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, showAverageWaitTime ? passengers.m_AverageWaitingTime : -1, routeColor.m_Color, outerRadius, sideMultiplier);
                             }
                         }
                     }
@@ -525,8 +526,11 @@ namespace BetterTransitView.Jobs
 
             int tempWait = waitTime;
             int waitDigits = 0;
-            if (tempWait == 0) waitDigits = 1;
-            while (tempWait > 0) { waitDigits++; tempWait /= 10; }
+            if (waitTime >= 0)
+            {
+                if (tempWait == 0) waitDigits = 1;
+                while (tempWait > 0) { waitDigits++; tempWait /= 10; }
+            }
 
             float digitWidth = labelThickness * 1.2f;
             float spacing = labelThickness * 0.6f;
@@ -535,8 +539,15 @@ namespace BetterTransitView.Jobs
             float hyphenW = GetCharWidth('-', digitWidth);
             float mW = GetCharWidth('m', digitWidth);
 
-            float totalWidth = (countDigits * digitWidth) + spaceW + hyphenW + spaceW + (waitDigits * digitWidth) + mW;
-            int totalChars = countDigits + 3 + waitDigits + 1; // 3 chars for " - ", 1 for "m"
+            float totalWidth = (countDigits * digitWidth);
+            int totalChars = countDigits;
+
+            if (waitTime >= 0)
+            {
+                totalWidth += spaceW + hyphenW + spaceW + (waitDigits * digitWidth) + mW;
+                totalChars += 3 + waitDigits + 1; // 3 chars for " - ", 1 for "m"
+            }
+
             totalWidth += (totalChars - 1) * spacing;
 
             float horizontalPadding = labelThickness * 3.5f; 
@@ -578,22 +589,25 @@ namespace BetterTransitView.Jobs
                 for (int i = rev.Length - 1; i >= 0; i--) chars.Add(rev[i]);
             }
 
-            chars.Add(' '); chars.Add('-'); chars.Add(' ');
-
-            int tempWait = waitTime;
-            if (tempWait == 0) chars.Add('0');
-            else
+            if (waitTime >= 0)
             {
-                NativeList<char> rev = new NativeList<char>(8, Allocator.Temp);
-                while (tempWait > 0)
-                {
-                    rev.Add((char)('0' + (tempWait % 10)));
-                    tempWait /= 10;
-                }
-                for (int i = rev.Length - 1; i >= 0; i--) chars.Add(rev[i]);
-            }
+                chars.Add(' '); chars.Add('-'); chars.Add(' ');
 
-            chars.Add('m');
+                int tempWait = waitTime;
+                if (tempWait == 0) chars.Add('0');
+                else
+                {
+                    NativeList<char> rev = new NativeList<char>(8, Allocator.Temp);
+                    while (tempWait > 0)
+                    {
+                        rev.Add((char)('0' + (tempWait % 10)));
+                        tempWait /= 10;
+                    }
+                    for (int i = rev.Length - 1; i >= 0; i--) chars.Add(rev[i]);
+                }
+
+                chars.Add('m');
+            }
 
             float digitWidth = thickness * 1.2f;
             float digitHeight = thickness * 2.2f;
