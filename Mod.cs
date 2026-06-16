@@ -1,4 +1,4 @@
-﻿using Colossal.IO.AssetDatabase;
+using Colossal.IO.AssetDatabase;
 using Colossal.Logging;
 using Game;
 using Game.Input;
@@ -37,6 +37,7 @@ namespace BetterTransitView
 
             AssetDatabase.global.LoadSettings(nameof(BetterTransitView), m_Setting, new ModSettings.ModSettings(this));
 
+            updateSystem.UpdateAt<BetterTransitView.Systems.BetterTransitViewPickerToolSystem>(SystemUpdatePhase.ToolUpdate);
             updateSystem.UpdateAt<BetterTransitView.Systems.TransitUISystem>(SystemUpdatePhase.UIUpdate);
             
             updateSystem.UpdateAt<SimpleOverlayRendererSystem>(SystemUpdatePhase.Rendering);

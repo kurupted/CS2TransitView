@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, memo, useRef } from 'react';
+import React, { useState, useEffect, memo, useRef } from 'react';
 import { bindValue, trigger, useValue } from "cs2/api";
 import { TransitType, SortField, TransitLine } from './types';
 import { VanillaComponentResolver } from "./VanillaComponentResolver";
@@ -9,13 +9,15 @@ const showStopsAndStations$ = bindValue<boolean>("BetterTransitView", "showStops
 const showInfoviewBackground$ = bindValue<boolean>("BetterTransitView", "showInfoviewBackground", false);
 const showWaitingPassengers$ = bindValue<boolean>("BetterTransitView", "showWaitingPassengers", false);
 const showTransitVehicles$ = bindValue<boolean>("BetterTransitView", "showTransitVehicles", false);
+const selectedTransitLine$ = bindValue<number>("BetterTransitView", "selectedTransitLine", 0);
+const isMapPickerActive$ = bindValue<boolean>("BetterTransitView", "isMapPickerActive", false);
 
-const VehicleIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>));
-const PassengerIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>));
-const LengthIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M21 7H3c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 8H3V9h2v3h2V9h2v3h2V9h2v3h2V9h2v6z"/></svg>));
-const UsageIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z"/></svg>));
-const CargoIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15 6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.37v6.71l6-3.38z"/></svg>));
-const StopIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>));
+const VehicleIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z" /></svg>));
+const PassengerIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>));
+const LengthIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M21 7H3c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 8H3V9h2v3h2V9h2v3h2V9h2v3h2V9h2v6z" /></svg>));
+const UsageIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z" /></svg>));
+const CargoIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15 6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.37v6.71l6-3.38z" /></svg>));
+const StopIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" /></svg>));
 
 
 /*const OverlaySettingsIcon = memo(() => (
@@ -65,9 +67,19 @@ const SearchIcon = memo(() => (
     </svg>
 ));
 
+const CrosshairIcon = memo(() => (
+    <svg viewBox="0 0 24 24" style={{ width: '16rem', height: '16rem' }} fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="22" y1="12" x2="18" y2="12"></line>
+        <line x1="6" y1="12" x2="2" y2="12"></line>
+        <line x1="12" y1="6" x2="12" y2="2"></line>
+        <line x1="12" y1="22" x2="12" y2="18"></line>
+    </svg>
+));
+
 const TransportTypeIcon = memo(({ type }: { type: TransitType }) => {
     let path = "";
-    switch(type) {
+    switch (type) {
         case 'train':
         case 'subway':
             path = "M12 2c-4 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-4-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm4 0h-2V6h2v4zm2.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z";
@@ -95,7 +107,7 @@ const TransportTypeIcon = memo(({ type }: { type: TransitType }) => {
 
 const MoreIcon = memo(() => (
     <svg viewBox="0 0 24 24" style={{ width: '18rem', height: '18rem' }} fill="#bbb">
-        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
     </svg>
 ));
 
@@ -113,7 +125,7 @@ const CustomCheckbox = ({ checked, onChange }: { checked: boolean, onChange: () 
 );
 
 // Custom, Crash-Proof React Dropdown
-const CustomDropdown = ({ value, options, onChange }: { value: string, options: {value: string, label: string}[], onChange: (val: string) => void }) => {
+const CustomDropdown = ({ value, options, onChange }: { value: string, options: { value: string, label: string }[], onChange: (val: string) => void }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -130,9 +142,8 @@ const CustomDropdown = ({ value, options, onChange }: { value: string, options: 
                     outline: 'none',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6rem',
                     fontSize: '12rem',
-                    minWidth: '80rem',
+                    width: '90rem',
                     justifyContent: 'space-between'
                 }}
             >
@@ -198,7 +209,9 @@ export const TransitPanel = () => {
     const [activeLines, setActiveLines] = useState<Set<number>>(new Set());
     const knownLineIds = useRef<Set<number>>(new Set());
     const [isOverflowOpen, setIsOverflowOpen] = useState(false);
-    
+    const isPickerMode = useValue(isMapPickerActive$);
+    const selectedTransitLine = useValue(selectedTransitLine$);
+
     // Sorting States
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortDesc, setSortDesc] = useState<boolean>(false);
@@ -208,13 +221,13 @@ export const TransitPanel = () => {
         name: 'Name',
         usage: 'Usage %',
         vehicles: 'Vehicles',
-        passengers: 'Passengers/Cargo',
+        passengers: activeTab === 'cargo' ? 'Cargo' : 'Passengers',
         length: 'Distance',
         stops: 'Stops'
     };
 
     let lines: TransitLine[] = [];
-    try { if (rawData && rawData !== "[]") lines = JSON.parse(rawData); } catch (e) {}
+    try { if (rawData && rawData !== "[]") lines = JSON.parse(rawData); } catch (e) { }
 
     // Keep track of new lines
     useEffect(() => {
@@ -281,16 +294,69 @@ export const TransitPanel = () => {
         };
     }, [isVisible]);
 
+    useEffect(() => {
+        if (selectedTransitLine !== 0 && lines.length > 0) {
+            const line = lines.find(l => l.id === selectedTransitLine);
+            if (line) {
+                if (activeTab === 'cargo' && !line.cargo) {
+                    setActiveTab(line.type === 'none' ? 'bus' : line.type);
+                } else if (activeTab !== 'cargo' && line.cargo) {
+                    setActiveTab('cargo');
+                } else if (!line.cargo && line.type !== activeTab && line.type !== 'none') {
+                    setActiveTab(line.type);
+                }
+
+                const targetLineId = selectedTransitLine;
+                let attempts = 0;
+
+                const tryScroll = () => {
+                    const el = document.getElementById(`transit-line-${targetLineId}`);
+                    if (el) {
+                        // 1. Scroll safely without using unsupported scrollIntoView()
+                        const container = document.getElementById('btv-transit-list-container');
+                        if (container) {
+                            const targetScroll = el.offsetTop - (container.clientHeight / 2) + (el.clientHeight / 2);
+                            container.scrollTop = targetScroll;
+                        }
+
+                        // 2. Flash background instantly
+                        el.style.transition = 'none';
+                        el.style.backgroundColor = 'rgba(66, 135, 245, 0.8)';
+
+                        // 3. Fade out after a tiny delay so the browser registers the flash
+                        setTimeout(() => {
+                            el.style.transition = 'background-color 1.5s ease-out';
+                            el.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                        }, 50);
+
+                        // 4. Safely reset the C# state AFTER the animation is totally finished (2 seconds)
+                        setTimeout(() => {
+                            trigger("BetterTransitView", "resetSelectedTransitLine");
+                        }, 2000);
+
+                    } else if (attempts < 20) {
+                        attempts++;
+                        setTimeout(tryScroll, 50);
+                    } else {
+                        trigger("BetterTransitView", "resetSelectedTransitLine");
+                    }
+                };
+
+                tryScroll();
+            }
+        }
+    }, [selectedTransitLine]);
+
     if (!isVisible) return null;
 
     const currentLines = lines.filter(l => {
         if (activeTab === 'cargo') return l.cargo;
         return !l.cargo && (l.type === activeTab || (activeTab === 'bus' && l.type === 'none'));
     });
-    
+
     const sortedLines = [...lines].filter(l => {
         if (activeTab === 'cargo') return l.cargo;
-        return l.type === activeTab && !l.cargo;
+        return !l.cargo && (l.type === activeTab || (activeTab === 'bus' && l.type === 'none'));
     }).sort((a, b) => {
         let valA = a[sortField];
         let valB = b[sortField];
@@ -311,7 +377,7 @@ export const TransitPanel = () => {
         // Apply ASC / DESC
         if (sortDesc) comparison = -comparison;
 
-        // NEW: Secondary Tie-Breaker Sort (If values are identical, sort by ID)
+        // Secondary Tie-Breaker Sort (If values are identical, sort by ID)
         if (comparison === 0) {
             comparison = a.id - b.id; // We keep this always ascending so jumping never occurs
         }
@@ -352,214 +418,249 @@ export const TransitPanel = () => {
         // Tell the C# backend to update the visibility
         trigger("BetterTransitView", "setAllLinesVisible", targetState);
     };
-
     const panelOpacity = showInfoviewBackground ? 1.0 : 0.98;
 
+    if (!isVisible) return null;
+
     return (
-        <div style={{
-            position: 'absolute',
-            top: '55rem',
-            left: '10rem',
-            pointerEvents: 'none'
-        }}>
-            <div className={theme?.toolOptionsPanel}
-                 style={{ width: '450rem', maxHeight: '800rem', padding: '12rem', pointerEvents: 'auto', display: 'flex', flexDirection: 'column',
-                     opacity: panelOpacity,
-                     backgroundImage: 'none',
-                     backgroundColor: `rgba(42, 55, 83, ${panelOpacity})`,
-                     backdropFilter: theme?.toolOptionsPanel ? undefined : 'blur(10px)',
-                     border: '1rem solid rgba(255, 255, 255, 0.1)',
-                     borderRadius: theme?.toolOptionsPanel ? undefined : '6rem'}}>
-    
-                <div style={{ padding: '10rem', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2 style={{ margin: 0, fontSize: '16rem', fontWeight: 'bold' }}>Transit View</h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8rem' }}>
-                        {/* Gray Map Toggle */}
-                        <div onClick={() => trigger("BetterTransitView", "setShowInfoviewBackground", !showInfoviewBackground)} style={{ display: 'flex', alignItems: 'center', gap: '6rem', fontSize: '11rem', cursor: 'pointer', color: showInfoviewBackground ? '#fff' : '#aaa', backgroundColor: showInfoviewBackground ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem 8rem', borderRadius: '4rem', transition: 'all 0.2s', fontWeight: showInfoviewBackground ? 'bold' : 'normal' }} title="Toggle Gray Map">
-                            Map
-                        </div>
+        <> {isPickerMode && (
+            <div style={{
+                position: 'absolute',
+                top: '10vh',
+                left: '50vw',
+                transform: 'translateX(-50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                padding: '15rem 30rem',
+                borderRadius: '10rem',
+                color: 'white',
+                fontSize: '22rem',
+                fontWeight: 'bold',
+                zIndex: 9999,
+                pointerEvents: 'none',
+                border: '2rem solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 4rem 20rem rgba(0, 0, 0, 0.6)'
+            }}>
+                Click a transit line on the map
+            </div>
+        )}
+            <div style={{
+                position: 'absolute',
+                top: '60rem',
+                left: '10rem',
+                pointerEvents: 'none'
+            }}>
+                <div className={theme?.toolOptionsPanel}
+                    style={{
+                        width: '450rem', maxHeight: '800rem', padding: '12rem', pointerEvents: 'auto', display: 'flex', flexDirection: 'column',
+                        opacity: panelOpacity,
+                        backgroundImage: 'none',
+                        backgroundColor: `rgba(42, 55, 83, ${panelOpacity})`,
+                        backdropFilter: theme?.toolOptionsPanel ? undefined : 'blur(10px)',
+                        border: '1rem solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: theme?.toolOptionsPanel ? undefined : '6rem'
+                    }}>
 
-                        {/* Separator */}
-                        <div style={{ width: '1px', height: '16rem', backgroundColor: 'rgba(255,255,255,0.1)' }} />
-
-                        {/* Stops Toggle */}
-                        <div onClick={() => trigger("BetterTransitView", "setShowStopsAndStations", !showStopsAndStations)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showStopsAndStations ? '#fff' : '#aaa', backgroundColor: showStopsAndStations ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Stops">
-                            <MapMarkerIcon />
-                        </div>
-
-                        {/* Passengers Toggle */}
-                        <div onClick={() => { if(showStopsAndStations) trigger("BetterTransitView", "setShowWaitingPassengers", !showWaitingPassengers) }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: showStopsAndStations ? 'pointer' : 'not-allowed', color: showWaitingPassengers ? '#fff' : '#aaa', backgroundColor: showWaitingPassengers ? '#4287f5' : 'rgba(255,255,255,0.1)', opacity: showStopsAndStations ? 1 : 0.3, padding: '4rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Waiting Passengers">
-                            <PeopleIcon />
-                        </div>
-
-                        {/* Vehicles Toggle */}
-                        <div onClick={() => trigger("BetterTransitView", "setShowTransitVehicles", !showTransitVehicles)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showTransitVehicles ? '#fff' : '#aaa', backgroundColor: showTransitVehicles ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Vehicles">
-                            <BusIcon />
-                        </div>
-
-                        {/* Toggle All Button */}
-                        <button onClick={toggleMasterAll} style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: '1rem solid rgba(255,255,255,0.3)', color: 'white', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', fontSize: '11rem', textTransform: 'uppercase', marginLeft: '25rem' }}>
-                            Toggle All
-                        </button>
-
-                        <button onClick={() => trigger("BetterTransitView", "toggleTransitCustom", false)} style={{ backgroundColor: ' rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', marginLeft: '15rem', padding: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <CloseIcon />
-                        </button>
-                    </div>
-                </div>
-    
-                <div style={{ display: 'flex', borderBottom: '1rem solid rgba(255,255,255,0.1)', position: 'relative' }}>
-                    {['bus', 'train', 'subway', 'tram', 'ferry', 'cargo'].map((tab) => (
-                        <button key={tab} onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }} style={{ flex: 1, padding: '10rem 0', cursor: 'pointer', fontSize: '13rem', background: activeTab === tab ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: activeTab === tab ? 'white' : '#888', borderBottom: activeTab === tab ? '2rem solid #4287f5' : '2rem solid transparent' }}>
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                        </button>
-                    ))}
-    
-                    {/* OVERFLOW BUTTON */}
-                    <button
-                        onClick={() => setIsOverflowOpen(!isOverflowOpen)}
-                        style={{
-                            padding: '10rem 15rem', cursor: 'pointer', background: 'transparent', border: 'none',
-                            borderBottom: (activeTab === 'airplane' || activeTab === 'ship') ? '2rem solid #4287f5' : '2rem solid transparent',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}
-                    >
-                        <MoreIcon />
-                    </button>
-    
-                    {/* DROPDOWN MENU */}
-                    {isOverflowOpen && (
-                        <>
-                            {/* Invisible click-away overlay */}
-                            <div onClick={() => setIsOverflowOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
-    
-                            <div style={{
-                                position: 'absolute', top: '100%', right: '0', backgroundColor: 'rgba(25, 30, 35, 0.98)',
-                                border: '1rem solid rgba(255,255,255,0.2)', borderRadius: '4rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                zIndex: 100, display: 'flex', flexDirection: 'column', minWidth: '100rem'
-                            }}>
-                                {['airplane', 'ship'].map(tab => (
-                                    <div
-                                        key={tab}
-                                        onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }}
-                                        style={{
-                                            padding: '10rem 15rem', cursor: 'pointer', fontSize: '13rem',
-                                            color: activeTab === tab ? '#4287f5' : '#ccc',
-                                            backgroundColor: activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                            borderBottom: '1rem solid rgba(255,255,255,0.05)'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent'}
-                                    >
-                                        {tab === 'airplane' ? 'Air' : 'Ship'}
-                                    </div>
-                                ))}
+                    <div style={{ padding: '10rem', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h2 style={{ margin: 0, fontSize: '16rem', fontWeight: 'bold' }}>Transit View</h2>
+                        <div style={{ display: 'flex', alignItems: 'center' }} id="divtopToggles">
+                            {/* Gray Map Toggle */}
+                            <div onClick={() => trigger("BetterTransitView", "setShowInfoviewBackground", !showInfoviewBackground)} style={{ display: 'flex', alignItems: 'center', fontSize: '11rem', cursor: 'pointer', color: showInfoviewBackground ? '#fff' : '#aaa', backgroundColor: showInfoviewBackground ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem 8rem', borderRadius: '4rem', transition: 'all 0.2s', fontWeight: showInfoviewBackground ? 'bold' : 'normal' }} title="Toggle Gray Map">
+                                Map
                             </div>
-                        </>
-                    )}
-                </div>
-    
-                <div style={{ padding: '10rem 15rem', backgroundColor: 'rgba(0,0,0,0.2)', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8rem' }}>
-    
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8rem', fontSize: '12rem', color: '#888' }}>
-                            Sort: &nbsp;
-                            <CustomDropdown
-                                value={sortField}
-                                options={sortOptions.map(opt => ({ value: opt, label: sortLabels[opt] }))}
-                                onChange={(val) => setSortField(val as SortField)}
-                            />
-                            <button onClick={() => setSortDesc(!sortDesc)} style={{ background: 'rgba(255,255,255,0.05)', border: '1rem solid rgba(255,255,255,0.1)', borderRadius: '4rem', color: '#fff', cursor: 'pointer', padding: '4rem 8rem', fontSize: '12rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {sortDesc ? 'DESC ↓' : 'ASC ↑'}
+
+                            {/* Separator */}
+                            <div style={{ width: '1px', height: '16rem', backgroundColor: 'rgba(255,255,255,0.1)', marginLeft: '1rem' }} />
+
+                            {/* Stops Toggle */}
+                            <div onClick={() => trigger("BetterTransitView", "setShowStopsAndStations", !showStopsAndStations)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showStopsAndStations ? '#fff' : '#aaa', backgroundColor: showStopsAndStations ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem', marginLeft: '1rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Stops">
+                                <MapMarkerIcon />
+                            </div>
+
+                            {/* Passengers Toggle */}
+                            <div onClick={() => { if (showStopsAndStations) trigger("BetterTransitView", "setShowWaitingPassengers", !showWaitingPassengers) }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: showStopsAndStations ? 'pointer' : 'not-allowed', color: showWaitingPassengers ? '#fff' : '#aaa', backgroundColor: showWaitingPassengers ? '#4287f5' : 'rgba(255,255,255,0.1)', opacity: showStopsAndStations ? 1 : 0.3, padding: '4rem', marginLeft: '1rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Waiting Passengers">
+                                <PeopleIcon />
+                            </div>
+
+                            {/* Vehicles Toggle */}
+                            <div onClick={() => trigger("BetterTransitView", "setShowTransitVehicles", !showTransitVehicles)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showTransitVehicles ? '#fff' : '#aaa', backgroundColor: showTransitVehicles ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem', marginLeft: '1rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Vehicles">
+                                <BusIcon />
+                            </div>
+
+                            {/* Toggle All Button */}
+                            <button onClick={toggleMasterAll} style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: '1rem solid rgba(255,255,255,0.3)', color: 'white', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', fontSize: '11rem', textTransform: 'uppercase', marginLeft: '25rem' }}>
+                                Toggle All
+                            </button>
+
+                            <button onClick={() => trigger("BetterTransitView", "toggleTransitCustom", false)} style={{ backgroundColor: ' rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', marginLeft: '15rem', padding: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <CloseIcon />
                             </button>
                         </div>
-    
-                        {/* TOOL BUTTON */}
+                    </div>
+
+                    <div style={{ display: 'flex', borderBottom: '1rem solid rgba(255,255,255,0.1)', position: 'relative' }}>
+                        {['bus', 'train', 'subway', 'tram', 'ferry', 'cargo'].map((tab) => (
+                            <button key={tab} onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }} style={{ flex: 1, padding: '10rem 0', cursor: 'pointer', fontSize: '13rem', background: activeTab === tab ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: activeTab === tab ? 'white' : '#888', borderBottom: activeTab === tab ? '2rem solid #4287f5' : '2rem solid transparent' }}>
+                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            </button>
+                        ))}
+
+                        {/* OVERFLOW BUTTON */}
                         <button
-                            onClick={() => trigger("BetterTransitView", "activateTransitTool", activeTab)}
-                            style={{ marginLeft: '10rem', backgroundColor: '#4287f5', border: 'none', borderRadius: '4rem', color: 'white', padding: '4rem 10rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6rem', fontSize: '12rem', fontWeight: 'bold' }}
-                            title={`Equip ${activeTab} tool`}
+                            onClick={() => setIsOverflowOpen(!isOverflowOpen)}
+                            style={{
+                                padding: '10rem 15rem', cursor: 'pointer', background: 'transparent', border: 'none',
+                                borderBottom: (activeTab === 'airplane' || activeTab === 'ship') ? '2rem solid #4287f5' : '2rem solid transparent',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
                         >
-                            <ToolIcon /> &nbsp;Tool
+                            <MoreIcon />
                         </button>
-    
+
+                        {/* DROPDOWN MENU */}
+                        {isOverflowOpen && (
+                            <>
+                                {/* Invisible click-away overlay */}
+                                <div onClick={() => setIsOverflowOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
+
+                                <div style={{
+                                    position: 'absolute', top: '100%', right: '0', backgroundColor: 'rgba(25, 30, 35, 0.98)',
+                                    border: '1rem solid rgba(255,255,255,0.2)', borderRadius: '4rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                    zIndex: 100, display: 'flex', flexDirection: 'column', minWidth: '100rem'
+                                }}>
+                                    {['airplane', 'ship'].map(tab => (
+                                        <div
+                                            key={tab}
+                                            onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }}
+                                            style={{
+                                                padding: '10rem 15rem', cursor: 'pointer', fontSize: '13rem',
+                                                color: activeTab === tab ? '#4287f5' : '#ccc',
+                                                backgroundColor: activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                                borderBottom: '1rem solid rgba(255,255,255,0.05)'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent'}
+                                        >
+                                            {tab === 'airplane' ? 'Air' : 'Ship'}
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
-                    <div onClick={toggleTabAll} style={{ display: 'flex', alignItems: 'center', gap: '8rem', fontSize: '13rem', cursor: 'pointer', color: '#fff' }}>
-                        Toggle Tab <CustomCheckbox checked={allVisibleInTab} onChange={() => {}} />
-                    </div>
-                </div>
-    
-                <div style={{ padding: '10rem', overflowY: 'auto', flex: 1 }}>
-                    {sortedLines.length === 0 ? (
-                        <div style={{ padding: '20rem', textAlign: 'center', color: '#666', fontSize: '13rem' }}>No lines found.</div>
-                    ) : sortedLines.map(line => (
-                        <div key={line.id} onClick={() => toggleLine(line.id)} style={{ display: 'flex', alignItems: 'center', padding: '10rem', marginBottom: '8rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6rem', borderLeft: `4rem solid ${line.color}`, cursor: 'pointer' }}>
-    
-                    {/* Type Icon is dynamically added in the Cargo Tab */}
-                    {activeTab === 'cargo' && (
-                        <div style={{ marginRight: '10rem', display: 'flex', alignItems: 'center' }} title={`Type: ${line.type}`}>
-                            <TransportTypeIcon type={line.type} />
-                        </div>
-                    )}
-    
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ fontWeight: 'bold', fontSize: '16rem', marginBottom: '8rem', display: 'flex', alignItems: 'center', gap: '8rem' }}>
-                            <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                                {line.name} &nbsp;
-                            </span>
-                            <div
-                                onClick={(e) => {
-                                    e.stopPropagation(); // Prevents the row from toggling visibility
-                                    trigger("BetterTransitView", "showVanillaLineInfo", line.id);
-                                }}
-                                title="Inspect Route"
-                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', borderRadius: '4rem', transition: 'background-color 0.1s', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.05)' }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
-                            >
-                                <SearchIcon />
+
+                    <div style={{ padding: '10rem 15rem', backgroundColor: 'rgba(0,0,0,0.2)', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+
+                            <div style={{ display: 'flex', alignItems: 'center', fontSize: '12rem', color: '#888' }}>
+                                Sort: &nbsp;
+                                <CustomDropdown
+                                    value={sortField}
+                                    options={sortOptions.map(opt => ({ value: opt, label: sortLabels[opt] }))}
+                                    onChange={(val) => setSortField(val as SortField)}
+                                />
+                                <button onClick={() => setSortDesc(!sortDesc)} style={{ background: 'rgba(255,255,255,0.05)', border: '1rem solid rgba(255,255,255,0.1)', borderRadius: '4rem', color: '#fff', cursor: 'pointer', padding: '4rem 8rem', marginLeft: '1rem', fontSize: '12rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {sortDesc ? 'DESC ↓' : 'ASC ↑'}
+                                </button>
                             </div>
+
+                            {/* TOOL BUTTON */}
+                            <button
+                                onClick={() => trigger("BetterTransitView", "activateTransitTool", activeTab)}
+                                style={{ marginLeft: '15rem', backgroundColor: '#4287f5', border: 'none', borderRadius: '4rem', color: 'white', padding: '4rem 10rem', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '12rem', fontWeight: 'bold' }}
+                                title={`Equip ${activeTab} tool`}
+                            >
+                                <ToolIcon /> &nbsp;Tool
+                            </button>
+
+                            {/* PICKER BUTTON */}
+                            <button
+                                onClick={() => {
+                                    trigger("BetterTransitView", "toggleMapPicker", !isPickerMode);
+                                }}
+                                style={{ marginLeft: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', backgroundColor: isPickerMode ? 'rgba(255, 0, 0, 0.5)' : 'rgba(255,255,255,0.05)', color: isPickerMode ? 'white' : '#aaa', border: '1rem solid rgba(255,255,255,0.1)' }}
+                                title="Pick a line on the map"
+                            >
+                                <CrosshairIcon />
+                            </button>
+
                         </div>
-    
-                        
-                        <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
-                            
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Length">
-                                <LengthIcon /> {line.length}
-                            </span>
-    
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Stops">
-                                <StopIcon /> {line.stops || 0}
-                            </span>
-                            
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Vehicles">
-                                <VehicleIcon /> {line.vehicles}
-                            </span>
-    
-                            {line.cargo ? (
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Cargo Transported">
-                                    <CargoIcon /> {((line.passengers || 0) / 1000).toFixed(0)} t
-                                </span>
-                            ) : (
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '80rem' }} title="Passengers">
-                                    <PassengerIcon /> {line.passengers || 0}
-                                </span>
-                            )}
-    
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4rem', width: '60rem' }} title="Usage">
-                                <UsageIcon /> {line.usage}%
-                            </span>
+                        <div onClick={toggleTabAll} style={{ display: 'flex', alignItems: 'center', fontSize: '13rem', cursor: 'pointer', color: '#fff' }}>
+                            Toggle Tab <CustomCheckbox checked={allVisibleInTab} onChange={() => { }} />
                         </div>
                     </div>
-    
-                    {/* Dummy onChange protects bubbling conflicts but relies on row's click trigger natively */}
-                    <div style={{ marginLeft: '15rem', flexShrink: 0 }}>
-                        <CustomCheckbox checked={activeLines.has(line.id)} onChange={() => {}} />
+
+                    <div id="btv-transit-list-container" style={{ padding: '10rem', overflowY: 'auto', flex: 1 }}>
+                        {sortedLines.length === 0 ? (
+                            <div style={{ padding: '20rem', textAlign: 'center', color: '#666', fontSize: '13rem' }}>No lines found.</div>
+                        ) : sortedLines.map(line => (
+                            <div id={`transit-line-${line.id}`} key={line.id} onClick={() => toggleLine(line.id)} style={{ display: 'flex', alignItems: 'center', padding: '10rem', marginBottom: '8rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6rem', borderLeft: `4rem solid ${line.color}`, cursor: 'pointer' }}>
+
+                                {/* Type Icon is dynamically added in the Cargo Tab */}
+                                {activeTab === 'cargo' && (
+                                    <div style={{ marginRight: '10rem', display: 'flex', alignItems: 'center' }} title={`Type: ${line.type}`}>
+                                        <TransportTypeIcon type={line.type} />
+                                    </div>
+                                )}
+
+                                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ fontWeight: 'bold', fontSize: '16rem', marginBottom: '8rem', display: 'flex', alignItems: 'center' }}>
+                                        <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                            {line.name} &nbsp;
+                                        </span>
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Prevents the row from toggling visibility
+                                                trigger("BetterTransitView", "showVanillaLineInfo", line.id);
+                                            }}
+                                            title="Inspect Route"
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', borderRadius: '4rem', transition: 'background-color 0.1s', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.05)' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                                        >
+                                            <SearchIcon />
+                                        </div>
+                                    </div>
+
+
+                                    <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
+
+                                        <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Length">
+                                            <LengthIcon /> {line.length}
+                                        </span>
+
+                                        <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Stops">
+                                            <StopIcon /> {line.stops || 0}
+                                        </span>
+
+                                        <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Vehicles">
+                                            <VehicleIcon /> {line.vehicles}
+                                        </span>
+
+                                        {line.cargo ? (
+                                            <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Cargo Transported">
+                                                <CargoIcon /> {((line.passengers || 0) / 1000).toFixed(0)} t
+                                            </span>
+                                        ) : (
+                                            <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Passengers">
+                                                <PassengerIcon /> {line.passengers || 0}
+                                            </span>
+                                        )}
+
+                                        <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Usage">
+                                            <UsageIcon /> {line.usage}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Dummy onChange protects bubbling conflicts but relies on row's click trigger natively */}
+                                <div style={{ marginLeft: '15rem', flexShrink: 0 }}>
+                                    <CustomCheckbox checked={activeLines.has(line.id)} onChange={() => { }} />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
-                ))}
             </div>
-        </div>
-</div>
-);
+        </>
+    );
 };
