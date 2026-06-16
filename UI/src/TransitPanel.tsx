@@ -311,7 +311,7 @@ export const TransitPanel = () => {
 
                 const tryScroll = () => {
                     const el = document.getElementById(`transit-line-${targetLineId}`);
-                    if (el) {
+                    if (el && el.clientHeight > 0) {
                         // 1. Scroll safely without using unsupported scrollIntoView()
                         const container = document.getElementById('btv-transit-list-container');
                         if (container) {
@@ -589,7 +589,7 @@ export const TransitPanel = () => {
                         </div>
                     </div>
 
-                    <div id="btv-transit-list-container" style={{ padding: '10rem', overflowY: 'auto', flex: 1 }}>
+                    <div id="btv-transit-list-container" style={{ padding: '10rem', overflowY: 'auto', flex: 1, position: 'relative' }}>
                         {sortedLines.length === 0 ? (
                             <div style={{ padding: '20rem', textAlign: 'center', color: '#666', fontSize: '13rem' }}>No lines found.</div>
                         ) : sortedLines.map(line => (
