@@ -13,6 +13,8 @@ const selectedTransitLine$ = bindValue<number>("BetterTransitView", "selectedTra
 const isMapPickerActive$ = bindValue<boolean>("BetterTransitView", "isMapPickerActive", false);
 
 const VehicleIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z" /></svg>));
+const DispatchIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '13rem', height: '13rem', marginLeft: '3rem' }} fill="none" stroke="#ffd700" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>));
+const WarningIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '13rem', height: '13rem', marginLeft: '3rem' }} fill="none" stroke="#ff4d4d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>));
 const PassengerIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>));
 const LengthIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M21 7H3c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 8H3V9h2v3h2V9h2v3h2V9h2v3h2V9h2v6z" /></svg>));
 const UsageIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z" /></svg>));
@@ -621,31 +623,37 @@ export const TransitPanel = () => {
                                         </div>
                                     </div>
 
-
+                                    
                                     <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
 
                                         <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Length">
                                             <LengthIcon /> {line.length}
                                         </span>
-
+                                    
                                         <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Stops">
                                             <StopIcon /> {line.stops || 0}
                                         </span>
 
-                                        <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Vehicles">
-                                            <VehicleIcon /> {line.vehicles}
-                                        </span>
+                                        <span style={{ display: 'flex', alignItems: 'center', width: '65rem',
+                                            color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
+                                            fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
+                                            }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
+                                        >
+                                            <VehicleIcon /> <span style={{ marginLeft: '2rem' }}>{line.vehicles}</span>
 
+                                            {line.hasShortage ? <span style={{ marginLeft: '2rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
+                                        </span>
+                                    
                                         {line.cargo ? (
-                                            <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Cargo Transported">
+                                            <span style={{ display: 'flex', alignItems: 'center', width: '75rem' }} title="Cargo Transported">
                                                 <CargoIcon /> {((line.passengers || 0) / 1000).toFixed(0)} t
                                             </span>
                                         ) : (
-                                            <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Passengers">
+                                            <span style={{ display: 'flex', alignItems: 'center', width: '75rem' }} title="Passengers">
                                                 <PassengerIcon /> {line.passengers || 0}
                                             </span>
                                         )}
-
+                                    
                                         <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Usage">
                                             <UsageIcon /> {line.usage}%
                                         </span>

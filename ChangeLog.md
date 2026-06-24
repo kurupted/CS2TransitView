@@ -1,2 +1,1 @@
-- Added a picker tool for identifying routes on the map.
-- Added configurable defaults and option to hide average wait times.
+- Now indicates when there's a shortage of vehicles, or a temporary reduction due to maintenance etc

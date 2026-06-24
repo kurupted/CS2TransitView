@@ -49,10 +49,10 @@ This mod is safe to remove and doesn't add data to your save files.
     <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/better-transit-view.1914977/" />
 
     <!-- Version of the mod.  Copied from assembly Version. -->
-    <ModVersion Value="1.4" />
+    <ModVersion Value="1.4.1" />
 
     <!-- Recommended version of the base game to use the mod. -->
-    <GameVersion Value="1.5.*" />
+    <GameVersion Value="1.6.*" />
 
     <!-- Dependency for the mod.  Can be set multiple times. -->
     <Dependency Id="" />
@@ -63,8 +63,7 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Change log.  Copied from ChangeLog.md file.  Supports minimal markdown subset. -->
     <ChangeLog>
-- Added a picker tool for identifying routes on the map.
-- Added configurable defaults and option to hide average wait times.
+- Now indicates if the number of active vehicles is less than the number of assigned vehicles.
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->

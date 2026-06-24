@@ -7,7 +7,9 @@ export interface TransitLine {
     type: TransitType;
     name: string;
     color: string;
-    vehicles: number;
+    vehicles: number;        // The active spawned count
+    isDispatching?: boolean;
+    hasShortage?: boolean;   // True if depot is out of vehicles
     passengers: number;
     length: string;
     lengthRaw?: number;

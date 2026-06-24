@@ -529,7 +529,12 @@ namespace BetterTransitView.Systems
                 
                 int cargo = 0;
                 int capacity = 0;
+                
+                var transportLine = EntityManager.GetComponentData<Game.Routes.TransportLine>(entity);
+                bool isDispatching = (transportLine.m_Flags & Game.Routes.TransportLineFlags.RequireVehicles) != 0;
+                bool hasShortage = (transportLine.m_Flags & Game.Routes.TransportLineFlags.NotEnoughVehicles) != 0;
                 int vehicles = TransportUIUtils.GetRouteVehiclesCount(EntityManager, entity, ref cargo, ref capacity);
+                
                 int usage = capacity > 0 ? UnityEngine.Mathf.RoundToInt(((float)cargo / capacity) * 100) : 0;
                 
                 float length = TransportUIUtils.GetRouteLength(EntityManager, entity);
@@ -552,7 +557,7 @@ namespace BetterTransitView.Systems
 
                 if (!first) result.Append(",");
                 string safeName = name?.Replace("\"", "\\\"") ?? "Unnamed Route";
-                result.Append($@"{{""id"": {entity.Index}, ""type"": ""{type}"", ""name"": ""{safeName}"", ""color"": ""{colorHex}"", ""vehicles"": {vehicles}, ""passengers"": {cargo}, ""length"": ""{lengthStr}"", ""lengthRaw"": {length.ToString(System.Globalization.CultureInfo.InvariantCulture)}, ""usage"": {usage}, ""cargo"": {isCargo.ToString().ToLower()}, ""visible"": {isVisible.ToString().ToLower()}, ""stops"": {stops} }}");
+                result.Append($@"{{""id"": {entity.Index}, ""type"": ""{type}"", ""name"": ""{safeName}"", ""color"": ""{colorHex}"", ""vehicles"": {vehicles}, ""isDispatching"": {isDispatching.ToString().ToLower()}, ""hasShortage"": {hasShortage.ToString().ToLower()}, ""passengers"": {cargo}, ""length"": ""{lengthStr}"", ""lengthRaw"": {length.ToString(System.Globalization.CultureInfo.InvariantCulture)}, ""usage"": {usage}, ""cargo"": {isCargo.ToString().ToLower()}, ""visible"": {isVisible.ToString().ToLower()}, ""stops"": {stops} }}");
                 
                 first = false;
             }
