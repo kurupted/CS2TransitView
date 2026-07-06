@@ -42,6 +42,9 @@ namespace BetterTransitView
             
             updateSystem.UpdateAt<SimpleOverlayRendererSystem>(SystemUpdatePhase.Rendering);
             
+            // Invalidate Realistic Trips interop cache on load
+            BetterTransitView.Utils.Time2WorkInterop.InvalidateCache();
+            
             // Register the Color System so the Harmony patch intercepts the colors
             //updateSystem.UpdateAt<BetterTransitView.Systems.MapColorSystem>(SystemUpdatePhase.UIUpdate);
         }

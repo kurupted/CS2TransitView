@@ -1,5 +1,6 @@
 import React, { useState, useEffect, memo, useRef } from 'react';
 import { bindValue, trigger, useValue } from "cs2/api";
+import { Scrollable } from "cs2/ui";
 import { TransitType, SortField, TransitLine } from './types';
 import { VanillaComponentResolver } from "./VanillaComponentResolver";
 
@@ -278,7 +279,7 @@ export const TransitPanel = () => {
             // on nested ones so they don't double-jump!
             styleEl.innerHTML = `
                 div[class*="selected-info-panel_"] {
-                    transform: translateX(460rem) !important;
+                    transform: translateX(495rem) !important;
                     transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
                 }
                 
@@ -295,6 +296,7 @@ export const TransitPanel = () => {
             }
         };
     }, [isVisible]);
+
 
     useEffect(() => {
         if (selectedTransitLine !== 0 && lines.length > 0) {
@@ -453,7 +455,7 @@ export const TransitPanel = () => {
             }}>
                 <div className={theme?.toolOptionsPanel}
                     style={{
-                        width: '450rem', maxHeight: '800rem', padding: '12rem', pointerEvents: 'auto', display: 'flex', flexDirection: 'column',
+                        width: '485rem', maxHeight: '800rem', padding: '12rem', pointerEvents: 'auto', display: 'flex', flexDirection: 'column',
                         opacity: panelOpacity,
                         backgroundImage: 'none',
                         backgroundColor: `rgba(42, 55, 83, ${panelOpacity})`,
@@ -591,7 +593,11 @@ export const TransitPanel = () => {
                         </div>
                     </div>
 
-                    <div id="btv-transit-list-container" style={{ padding: '10rem', overflowY: 'auto', flex: 1, position: 'relative' }}>
+                    <Scrollable
+                        id="btv-transit-list-container"
+                        vertical={true}
+                        style={{ padding: '8rem 4rem 8rem 8rem', flex: 1, minHeight: 0, position: 'relative' }}
+                    >
                         {sortedLines.length === 0 ? (
                             <div style={{ padding: '20rem', textAlign: 'center', color: '#666', fontSize: '13rem' }}>No lines found.</div>
                         ) : sortedLines.map(line => (
@@ -623,27 +629,28 @@ export const TransitPanel = () => {
                                         </div>
                                     </div>
 
-                                    
+
                                     <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
 
                                         <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Length">
                                             <LengthIcon /> {line.length}
                                         </span>
-                                    
+
                                         <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Stops">
                                             <StopIcon /> {line.stops || 0}
                                         </span>
 
-                                        <span style={{ display: 'flex', alignItems: 'center', width: '65rem',
+                                        <span style={{
+                                            display: 'flex', alignItems: 'center', width: '65rem',
                                             color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
                                             fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
-                                            }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
+                                        }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
                                         >
                                             <VehicleIcon /> <span style={{ marginLeft: '2rem' }}>{line.vehicles}</span>
 
                                             {line.hasShortage ? <span style={{ marginLeft: '2rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
                                         </span>
-                                    
+
                                         {line.cargo ? (
                                             <span style={{ display: 'flex', alignItems: 'center', width: '75rem' }} title="Cargo Transported">
                                                 <CargoIcon /> {((line.passengers || 0) / 1000).toFixed(0)} t
@@ -653,7 +660,7 @@ export const TransitPanel = () => {
                                                 <PassengerIcon /> {line.passengers || 0}
                                             </span>
                                         )}
-                                    
+
                                         <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Usage">
                                             <UsageIcon /> {line.usage}%
                                         </span>
@@ -666,7 +673,7 @@ export const TransitPanel = () => {
                                 </div>
                             </div>
                         ))}
-                    </div>
+                    </Scrollable>
                 </div>
             </div>
         </>

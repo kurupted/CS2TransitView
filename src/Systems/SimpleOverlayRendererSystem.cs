@@ -7,6 +7,7 @@ using Game.Tools;
 using Game.Pathfind; // Required for PathElement
 using Game.Prefabs; // Required for TransportLineData
 using BetterTransitView.Jobs;
+using BetterTransitView.Utils;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -143,6 +144,7 @@ namespace BetterTransitView.Systems
                 cameraRight = camRight,
                 cameraUp = camUp,
                 cameraPosition = camPos,
+                waitTimeDisplayFactor = Time2WorkInterop.GetTimeFactor(),
                 
                 // Injecting the ECS lookups directly so the Job can process the ConnectedRoute buffer
                 ConnectedRouteLookup = SystemAPI.GetBufferLookup<Game.Routes.ConnectedRoute>(true),

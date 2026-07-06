@@ -268,6 +268,7 @@ namespace BetterTransitView.Jobs
         public bool drawStops;
         public bool showWaiting;
         public bool showAverageWaitTime;
+        public float waitTimeDisplayFactor;
         
         // Using camera vectors so the labels float and face the camera
         public float3 cameraRight; 
@@ -411,7 +412,7 @@ namespace BetterTransitView.Jobs
                                     Entity routeEntity = owner.m_Owner;
                                     if (!HiddenRoutes.Contains(routeEntity) && ColorLookup.TryGetComponent(routeEntity, out var routeColor))
                                     {
-                                        AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, showAverageWaitTime ? passengers.m_AverageWaitingTime : -1, routeColor.m_Color, outerRadius, sideMultiplier);
+                                        AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, showAverageWaitTime ? ScaleWaitTime(passengers.m_AverageWaitingTime) : -1, routeColor.m_Color, outerRadius, sideMultiplier);
                                     }
                                 }
                             }
@@ -424,7 +425,7 @@ namespace BetterTransitView.Jobs
                             Entity routeEntity = owner.m_Owner;
                             if (!HiddenRoutes.Contains(routeEntity) && ColorLookup.TryGetComponent(routeEntity, out var routeColor))
                             {
-                                AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, showAverageWaitTime ? passengers.m_AverageWaitingTime : -1, routeColor.m_Color, outerRadius, sideMultiplier);
+                                AddPendingLabel(ref pendingLabels, pos, passengers.m_Count, showAverageWaitTime ? ScaleWaitTime(passengers.m_AverageWaitingTime) : -1, routeColor.m_Color, outerRadius, sideMultiplier);
                             }
                         }
                     }
@@ -507,6 +508,15 @@ namespace BetterTransitView.Jobs
             pendingLabels.Dispose();
             uniqueColors.Dispose();
             keys.Dispose();
+        }
+
+        private int ScaleWaitTime(int waitTime)
+        {
+            if (waitTime <= 0)
+                return waitTime;
+
+            float factor = math.max(1f, waitTimeDisplayFactor);
+            return math.max(0, (int)math.round(waitTime / factor));
         }
 
         private float GetCharWidth(char c, float baseDigitWidth)

@@ -49,7 +49,7 @@ This mod is safe to remove and doesn't add data to your save files.
     <ForumLink Value="https://forum.paradoxplaza.com/forum/threads/better-transit-view.1914977/" />
 
     <!-- Version of the mod.  Copied from assembly Version. -->
-    <ModVersion Value="1.4.1" />
+    <ModVersion Value="1.4.2" />
 
     <!-- Recommended version of the base game to use the mod. -->
     <GameVersion Value="1.6.*" />
@@ -63,7 +63,8 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Change log.  Copied from ChangeLog.md file.  Supports minimal markdown subset. -->
     <ChangeLog>
-- Now indicates if the number of active vehicles is less than the number of assigned vehicles.
+- Added a scrollbar.
+- Better compatibility with the Realistic Trips mod.
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->

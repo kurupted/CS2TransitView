@@ -1,1 +1,2 @@
-- Now indicates when there's a shortage of vehicles, or a temporary reduction due to maintenance etc
+- Added a scrollbar.
+- Better compatibility with the Realistic Trips mod.
