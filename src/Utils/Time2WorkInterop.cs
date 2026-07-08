@@ -22,13 +22,14 @@ namespace BetterTransitView.Utils
             try
             {
                 Type type = AppDomain.CurrentDomain.GetAssemblies()
+                    .Where(a => a != null)
                     .SelectMany(a =>
                     {
                         try { return a.GetTypes(); }
                         catch (ReflectionTypeLoadException e) { return e.Types?.Where(t => t != null) ?? Enumerable.Empty<Type>(); }
                         catch { return Enumerable.Empty<Type>(); }
                     })
-                    .FirstOrDefault(t => t.FullName == "Time2Work.Time2WorkTimeSystem");
+                    .FirstOrDefault(t => t != null && t.FullName == "Time2Work.Time2WorkTimeSystem");
 
                 if (type == null)
                     return s_Factor;
@@ -42,7 +43,10 @@ namespace BetterTransitView.Utils
 
                 FieldInfo ticksField = type.GetField("kTicksPerDay", BindingFlags.Public | BindingFlags.Static);
                 if (ticksField?.GetValue(null) is int ticksPerDay && ticksPerDay > 0)
+                {
                     s_Factor = math.max(1f, ticksPerDay / (float)TimeSystem.kTicksPerDay);
+                    return s_Factor;
+                }
             }
             catch
             {
