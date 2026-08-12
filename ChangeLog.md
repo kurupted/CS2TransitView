@@ -1,2 +1,3 @@
-- Added a scrollbar.
-- Better compatibility with the Realistic Trips mod.
+- You can now expand transit lines to view their stops.
+- Added Busiest Stops list (click the hourglass icon).
+- Fixed scrolling when jumping to a transit line.

@@ -293,13 +293,6 @@ namespace BetterTransitView.Jobs
             public int side; // 1 for right, -1 for left
         }
 
-        private struct LabelComparer : System.Collections.Generic.IComparer<LabelData>
-        {
-            public int Compare(LabelData x, LabelData y)
-            {
-                return x.sortScore.CompareTo(y.sortScore);
-            }
-        }
 
         private struct DrawnLabel
         {
@@ -433,7 +426,17 @@ namespace BetterTransitView.Jobs
             }
 
             // PASS 2: Sort and Draw Labels
-            pendingLabels.Sort(new LabelComparer());
+            for (int i = 1; i < pendingLabels.Length; i++)
+            {
+                var key = pendingLabels[i];
+                int j = i - 1;
+                while (j >= 0 && pendingLabels[j].sortScore > key.sortScore)
+                {
+                    pendingLabels[j + 1] = pendingLabels[j];
+                    j--;
+                }
+                pendingLabels[j + 1] = key;
+            }
             NativeList<DrawnLabel> drawnLabels = new NativeList<DrawnLabel>(pendingLabels.Length, Allocator.Temp);
 
             float shiftAmount = labelThickness * 4.8f; 
@@ -741,7 +744,6 @@ namespace BetterTransitView.Jobs
                 keys.Dispose();
                 return;
             }
-            keys.Sort(); 
 
             float minZoom = 1600f;
             float maxZoom = 10000f;

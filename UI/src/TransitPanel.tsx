@@ -21,6 +21,7 @@ const LengthIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem',
 const UsageIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z" /></svg>));
 const CargoIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15 6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.37v6.71l6-3.38z" /></svg>));
 const StopIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" /></svg>));
+const WaitTimeIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '13rem', height: '13rem' }} fill="none" stroke="#bbb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>));
 
 
 /*const OverlaySettingsIcon = memo(() => (
@@ -30,6 +31,15 @@ const StopIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', h
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
     </svg>
 ));*/
+
+const HourglassIcon = memo(() => (
+    <svg viewBox="0 0 24 24" style={{ width: '15rem', height: '15rem' }} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 22h14"></path>
+        <path d="M5 2h14"></path>
+        <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"></path>
+        <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path>
+    </svg>
+));
 
 const MapMarkerIcon = memo(() => (
     <svg viewBox="0 0 24 24" style={{ width: '15rem', height: '15rem' }} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -77,6 +87,18 @@ const CrosshairIcon = memo(() => (
         <line x1="6" y1="12" x2="2" y2="12"></line>
         <line x1="12" y1="6" x2="12" y2="2"></line>
         <line x1="12" y1="22" x2="12" y2="18"></line>
+    </svg>
+));
+
+const ChevronRightIcon = memo(() => (
+    <svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="none" stroke="#bbb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+));
+
+const ChevronDownIcon = memo(() => (
+    <svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="none" stroke="#bbb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
     </svg>
 ));
 
@@ -208,8 +230,10 @@ export const TransitPanel = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const showInfoviewBackground = useValue(showInfoviewBackground$);
 
+    const [isBusiestMode, setIsBusiestMode] = useState<boolean>(false);
     const [activeTab, setActiveTab] = useState<TransitType>('bus');
     const [activeLines, setActiveLines] = useState<Set<number>>(new Set());
+    const [expandedLineId, setExpandedLineId] = useState<number | null>(null);
     const knownLineIds = useRef<Set<number>>(new Set());
     const [isOverflowOpen, setIsOverflowOpen] = useState(false);
     const isPickerMode = useValue(isMapPickerActive$);
@@ -219,18 +243,126 @@ export const TransitPanel = () => {
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortDesc, setSortDesc] = useState<boolean>(false);
 
-    const sortOptions: SortField[] = ['name', 'usage', 'vehicles', 'passengers', 'length', 'stops'];
+    const activeTabs: TransitType[] = ['bus', 'train', 'subway', 'tram', 'ferry', 'cargo'];
+
+    const sortOptions: SortField[] = ['name', 'usage', 'vehicles', 'passengers', 'waitingPassengers', 'avgWaitTime', 'length', 'stops'];
+
     const sortLabels: Record<SortField, string> = {
         name: 'Name',
         usage: 'Usage %',
         vehicles: 'Vehicles',
         passengers: activeTab === 'cargo' ? 'Cargo' : 'Passengers',
+        waitingPassengers: 'Waiting',
+        avgWaitTime: 'Avg Wait',
         length: 'Distance',
         stops: 'Stops'
     };
 
     let lines: TransitLine[] = [];
     try { if (rawData && rawData !== "[]") lines = JSON.parse(rawData); } catch (e) { }
+
+    const busiestStops = React.useMemo(() => {
+        const map = new Map<number, {
+            id: number;
+            name: string;
+            totalWaiting: number;
+            maxWaitTime: number;
+            lines: Array<{
+                id: number;
+                name: string;
+                color: string;
+                type: TransitType;
+                waiting: number;
+                waitTime: number;
+            }>;
+        }>();
+
+        lines.forEach(line => {
+            if (!line.stopList) return;
+            line.stopList.forEach(stop => {
+                const key = (stop as any).targetId || stop.id;
+                let entry = map.get(key);
+                if (!entry) {
+                    entry = {
+                        id: stop.id,
+                        name: stop.name,
+                        totalWaiting: 0,
+                        maxWaitTime: 0,
+                        lines: []
+                    };
+                    map.set(key, entry);
+                }
+                entry.totalWaiting += (stop.waiting || 0);
+                if ((stop.waitTime || 0) > entry.maxWaitTime) {
+                    entry.maxWaitTime = stop.waitTime;
+                }
+                entry.lines.push({
+                    id: line.id,
+                    name: line.name,
+                    color: line.color,
+                    type: line.type,
+                    waiting: stop.waiting || 0,
+                    waitTime: stop.waitTime || 0
+                });
+            });
+        });
+
+        return Array.from(map.values())
+            .filter(s => s.totalWaiting > 0 || s.lines.length > 0)
+            .sort((a, b) => b.totalWaiting - a.totalWaiting || b.maxWaitTime - a.maxWaitTime)
+            .slice(0, 12);
+    }, [lines]);
+
+    const scrollLineIntoView = React.useCallback((targetLineId: number) => {
+        let attempts = 0;
+        const tryScroll = () => {
+            const el = document.getElementById(`transit-line-${targetLineId}`);
+            if (el && el.clientHeight > 0) {
+                let container: HTMLElement | null = el.parentElement;
+                while (container && container !== document.body) {
+                    const style = window.getComputedStyle(container);
+                    const overflowY = style.overflowY;
+                    const className = container.className && typeof container.className === 'string' ? container.className : '';
+                    const isScrollClass = className.includes('scrollable') || className.includes('content') || className.includes('scroll');
+
+                    if (overflowY === 'auto' || overflowY === 'scroll' || isScrollClass || (container.scrollHeight > container.clientHeight && container.clientHeight > 0)) {
+                        const elRect = el.getBoundingClientRect();
+                        const containerRect = container.getBoundingClientRect();
+                        const relativeTop = (elRect.top - containerRect.top) + container.scrollTop;
+                        const targetScroll = relativeTop - (container.clientHeight / 2) + (el.clientHeight / 2);
+                        container.scrollTop = Math.max(0, targetScroll);
+                        break;
+                    }
+                    container = container.parentElement;
+                }
+
+                el.style.transition = 'none';
+                el.style.backgroundColor = 'rgba(66, 135, 245, 0.8)';
+
+                setTimeout(() => {
+                    el.style.transition = 'background-color 1.5s ease-out';
+                    el.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                }, 50);
+            } else if (attempts < 20) {
+                attempts++;
+                setTimeout(tryScroll, 50);
+            }
+        };
+        tryScroll();
+    }, []);
+
+    const handleJumpToLineAndStop = (lineId: number, lineType: TransitType, stopId?: number) => {
+        setIsBusiestMode(false);
+        const line = lines.find(l => l.id === lineId);
+        if (line) {
+            setActiveTab(line.cargo ? 'cargo' : (line.type === 'none' ? 'bus' : line.type));
+        }
+        setExpandedLineId(lineId);
+        if (stopId) {
+            trigger("BetterTransitView", "showVanillaLineInfo", stopId);
+        }
+        scrollLineIntoView(lineId);
+    };
 
     // Keep track of new lines
     useEffect(() => {
@@ -275,8 +407,6 @@ export const TransitPanel = () => {
         if (!styleEl) {
             styleEl = document.createElement('style');
             styleEl.id = styleId;
-            // Target all selected-info-panels, but explicitly cancel the transform 
-            // on nested ones so they don't double-jump!
             styleEl.innerHTML = `
                 div[class*="selected-info-panel_"] {
                     transform: translateX(495rem) !important;
@@ -302,13 +432,10 @@ export const TransitPanel = () => {
         if (selectedTransitLine !== 0 && lines.length > 0) {
             const line = lines.find(l => l.id === selectedTransitLine);
             if (line) {
-                if (activeTab === 'cargo' && !line.cargo) {
-                    setActiveTab(line.type === 'none' ? 'bus' : line.type);
-                } else if (activeTab !== 'cargo' && line.cargo) {
-                    setActiveTab('cargo');
-                } else if (!line.cargo && line.type !== activeTab && line.type !== 'none') {
-                    setActiveTab(line.type);
-                }
+                // Force the per-line list view — the crowded-stops view never
+                // renders `transit-line-${id}` rows, so scrolling there is a no-op.
+                setIsBusiestMode(false);
+                setActiveTab(line.cargo ? 'cargo' : (line.type === 'none' ? 'bus' : line.type));
 
                 const targetLineId = selectedTransitLine;
                 let attempts = 0;
@@ -316,24 +443,35 @@ export const TransitPanel = () => {
                 const tryScroll = () => {
                     const el = document.getElementById(`transit-line-${targetLineId}`);
                     if (el && el.clientHeight > 0) {
-                        // 1. Scroll safely without using unsupported scrollIntoView()
-                        const container = document.getElementById('btv-transit-list-container');
-                        if (container) {
-                            const targetScroll = el.offsetTop - (container.clientHeight / 2) + (el.clientHeight / 2);
-                            container.scrollTop = targetScroll;
+                        let container: HTMLElement | null = el.parentElement;
+                        while (container && container !== document.body) {
+                            const style = window.getComputedStyle(container);
+                            const overflowY = style.overflowY;
+                            const className = container.className && typeof container.className === 'string' ? container.className : '';
+                            const isScrollClass = className.includes('scrollable') || className.includes('content') || className.includes('scroll');
+
+                            if (overflowY === 'auto' || overflowY === 'scroll' || isScrollClass || (container.scrollHeight > container.clientHeight && container.clientHeight > 0)) {
+                                const elRect = el.getBoundingClientRect();
+                                const containerRect = container.getBoundingClientRect();
+                                const relativeTop = (elRect.top - containerRect.top) + container.scrollTop;
+                                const targetScroll = relativeTop - (container.clientHeight / 2) + (el.clientHeight / 2);
+                                console.log('before', container.scrollTop, 'target', targetScroll);
+                                container.scrollTop = Math.max(0, targetScroll);
+                                console.log('after', container.scrollTop);
+                                container.dispatchEvent(new Event('scroll', { bubbles: true }));
+                                break;
+                            }
+                            container = container.parentElement;
                         }
 
-                        // 2. Flash background instantly
                         el.style.transition = 'none';
                         el.style.backgroundColor = 'rgba(66, 135, 245, 0.8)';
 
-                        // 3. Fade out after a tiny delay so the browser registers the flash
                         setTimeout(() => {
                             el.style.transition = 'background-color 1.5s ease-out';
                             el.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                         }, 50);
 
-                        // 4. Safely reset the C# state AFTER the animation is totally finished (2 seconds)
                         setTimeout(() => {
                             trigger("BetterTransitView", "resetSelectedTransitLine");
                         }, 2000);
@@ -353,22 +491,53 @@ export const TransitPanel = () => {
 
     if (!isVisible) return null;
 
-    const currentLines = lines.filter(l => {
-        if (activeTab === 'cargo') return l.cargo;
-        return !l.cargo && (l.type === activeTab || (activeTab === 'bus' && l.type === 'none'));
-    });
+    const togglePeopleIconMode = () => {
+        const nextState = !showWaitingPassengers;
+        trigger("BetterTransitView", "setShowWaitingPassengers", nextState);
+        setIsBusiestMode(nextState);
+
+        if (nextState) {
+            if (activeTab === 'cargo' || activeTab === 'bus') {
+                setActiveTab('busiest');
+            }
+            setSortField('waitingPassengers');
+            setSortDesc(true);
+        } else {
+            if (activeTab === 'busiest') {
+                setActiveTab('bus');
+            }
+            setSortField('name');
+            setSortDesc(false);
+        }
+    };
+
+    const toggleExpand = (lineId: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setExpandedLineId(prev => prev === lineId ? null : lineId);
+    };
 
     const sortedLines = [...lines].filter(l => {
-        if (activeTab === 'cargo') return l.cargo;
-        return !l.cargo && (l.type === activeTab || (activeTab === 'bus' && l.type === 'none'));
+        if (isBusiestMode) {
+            if (l.cargo) return false;
+            if (activeTab === 'busiest') return true;
+            return l.type === activeTab || (activeTab === 'bus' && l.type === 'none');
+        } else {
+            if (activeTab === 'cargo') return l.cargo;
+            return !l.cargo && (l.type === activeTab || (activeTab === 'bus' && l.type === 'none'));
+        }
     }).sort((a, b) => {
-        let valA = a[sortField];
-        let valB = b[sortField];
+        let valA: any = a[sortField];
+        let valB: any = b[sortField];
 
-        // Ensure length uses a numeric comparison if available
         if (sortField === 'length') {
             valA = a.lengthRaw || parseFloat(a.length as string) || 0;
             valB = b.lengthRaw || parseFloat(b.length as string) || 0;
+        } else if (sortField === 'waitingPassengers') {
+            valA = a.waitingPassengers || 0;
+            valB = b.waitingPassengers || 0;
+        } else if (sortField === 'avgWaitTime') {
+            valA = a.avgWaitTime || 0;
+            valB = b.avgWaitTime || 0;
         }
 
         let comparison = 0;
@@ -378,12 +547,10 @@ export const TransitPanel = () => {
             comparison = (valA as number) > (valB as number) ? 1 : ((valA as number) < (valB as number) ? -1 : 0);
         }
 
-        // Apply ASC / DESC
         if (sortDesc) comparison = -comparison;
 
-        // Secondary Tie-Breaker Sort (If values are identical, sort by ID)
         if (comparison === 0) {
-            comparison = a.id - b.id; // We keep this always ascending so jumping never occurs
+            comparison = a.id - b.id;
         }
 
         return comparison;
@@ -410,7 +577,6 @@ export const TransitPanel = () => {
     };
 
     const toggleMasterAll = () => {
-        // If ANY line is off, the master toggle turns them all ON. Else, turns all OFF.
         const targetState = lines.some(l => !activeLines.has(l.id));
 
         const next = new Set<number>();
@@ -418,10 +584,9 @@ export const TransitPanel = () => {
             lines.forEach(l => next.add(l.id));
         }
         setActiveLines(next);
-
-        // Tell the C# backend to update the visibility
         trigger("BetterTransitView", "setAllLinesVisible", targetState);
     };
+
     const panelOpacity = showInfoviewBackground ? 1.0 : 0.98;
 
     if (!isVisible) return null;
@@ -465,29 +630,38 @@ export const TransitPanel = () => {
                     }}>
 
                     <div style={{ padding: '10rem', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h2 style={{ margin: 0, fontSize: '16rem', fontWeight: 'bold' }}>Transit View</h2>
+                        <h2 style={{ margin: 0, fontSize: '16rem', fontWeight: 'bold' }}>{isBusiestMode ? "Crowded Stops" : "Transit View"}</h2>
                         <div style={{ display: 'flex', alignItems: 'center' }} id="divtopToggles">
+                            {/* Hourglass Toggle for Busiest / Crowded Mode */}
+                            <div
+                                onClick={() => setIsBusiestMode(!isBusiestMode)}
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                    color: isBusiestMode ? '#fff' : '#aaa',
+                                    backgroundColor: isBusiestMode ? '#4287f5' : 'rgba(255,255,255,0.1)',
+                                    padding: '4rem', marginRight: '8rem', borderRadius: '4rem', transition: 'all 0.2s'
+                                }}
+                                title="Toggle Crowded Stops View"
+                            >
+                                <HourglassIcon />
+                            </div>
+
                             {/* Gray Map Toggle */}
-                            <div onClick={() => trigger("BetterTransitView", "setShowInfoviewBackground", !showInfoviewBackground)} style={{ display: 'flex', alignItems: 'center', fontSize: '11rem', cursor: 'pointer', color: showInfoviewBackground ? '#fff' : '#aaa', backgroundColor: showInfoviewBackground ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem 8rem', borderRadius: '4rem', transition: 'all 0.2s', fontWeight: showInfoviewBackground ? 'bold' : 'normal' }} title="Toggle Gray Map">
+                            <div onClick={() => trigger("BetterTransitView", "setShowInfoviewBackground", !showInfoviewBackground)} style={{ display: 'flex', alignItems: 'center', fontSize: '11rem', cursor: 'pointer', color: showInfoviewBackground ? '#fff' : '#aaa', backgroundColor: showInfoviewBackground ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem', borderRadius: '4rem', transition: 'all 0.2s', fontWeight: showInfoviewBackground ? 'bold' : 'normal' }} title="Toggle Gray Map">
                                 Map
                             </div>
 
                             {/* Separator */}
-                            <div style={{ width: '1px', height: '16rem', backgroundColor: 'rgba(255,255,255,0.1)', marginLeft: '1rem' }} />
-
-                            {/* Stops Toggle */}
-                            <div onClick={() => trigger("BetterTransitView", "setShowStopsAndStations", !showStopsAndStations)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showStopsAndStations ? '#fff' : '#aaa', backgroundColor: showStopsAndStations ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem', marginLeft: '1rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Stops">
-                                <MapMarkerIcon />
-                            </div>
-
-                            {/* Passengers Toggle */}
-                            <div onClick={() => { if (showStopsAndStations) trigger("BetterTransitView", "setShowWaitingPassengers", !showWaitingPassengers) }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: showStopsAndStations ? 'pointer' : 'not-allowed', color: showWaitingPassengers ? '#fff' : '#aaa', backgroundColor: showWaitingPassengers ? '#4287f5' : 'rgba(255,255,255,0.1)', opacity: showStopsAndStations ? 1 : 0.3, padding: '4rem', marginLeft: '1rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Waiting Passengers">
-                                <PeopleIcon />
-                            </div>
+                            <div style={{ width: '1px', height: '16rem', backgroundColor: 'rgba(255,255,255,0.1)', marginLeft: '6rem', marginRight: '5rem' }} />
 
                             {/* Vehicles Toggle */}
-                            <div onClick={() => trigger("BetterTransitView", "setShowTransitVehicles", !showTransitVehicles)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showTransitVehicles ? '#fff' : '#aaa', backgroundColor: showTransitVehicles ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem', marginLeft: '1rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Vehicles">
+                            <div onClick={() => trigger("BetterTransitView", "setShowTransitVehicles", !showTransitVehicles)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showTransitVehicles ? '#fff' : '#aaa', backgroundColor: showTransitVehicles ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem 5rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Vehicles Overlay">
                                 <BusIcon />
+                            </div>
+
+                            {/* People Icon Toggle (MOVED BACK NEXT TO BUS ICON) */}
+                            <div onClick={() => trigger("BetterTransitView", "setShowWaitingPassengers", !showWaitingPassengers)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showWaitingPassengers ? '#fff' : '#aaa', backgroundColor: showWaitingPassengers ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem 5rem', marginLeft: '3rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Waiting Passengers Overlay">
+                                <PeopleIcon />
                             </div>
 
                             {/* Toggle All Button */}
@@ -500,180 +674,465 @@ export const TransitPanel = () => {
                             </button>
                         </div>
                     </div>
+                    {isBusiestMode ? (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                            <div style={{ padding: '8rem 15rem', color: '#aaa', fontSize: '13rem', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontWeight: 'bold', color: '#fff' }}>Top 12 Crowded Stops</span>
+                                <span style={{ fontSize: '11rem', color: '#888' }}>Ranked by waiting passengers</span>
+                            </div>
 
-                    <div style={{ display: 'flex', borderBottom: '1rem solid rgba(255,255,255,0.1)', position: 'relative' }}>
-                        {['bus', 'train', 'subway', 'tram', 'ferry', 'cargo'].map((tab) => (
-                            <button key={tab} onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }} style={{ flex: 1, padding: '10rem 0', cursor: 'pointer', fontSize: '13rem', background: activeTab === tab ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: activeTab === tab ? 'white' : '#888', borderBottom: activeTab === tab ? '2rem solid #4287f5' : '2rem solid transparent' }}>
-                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            </button>
-                        ))}
-
-                        {/* OVERFLOW BUTTON */}
-                        <button
-                            onClick={() => setIsOverflowOpen(!isOverflowOpen)}
-                            style={{
-                                padding: '10rem 15rem', cursor: 'pointer', background: 'transparent', border: 'none',
-                                borderBottom: (activeTab === 'airplane' || activeTab === 'ship') ? '2rem solid #4287f5' : '2rem solid transparent',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}
-                        >
-                            <MoreIcon />
-                        </button>
-
-                        {/* DROPDOWN MENU */}
-                        {isOverflowOpen && (
-                            <>
-                                {/* Invisible click-away overlay */}
-                                <div onClick={() => setIsOverflowOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
-
-                                <div style={{
-                                    position: 'absolute', top: '100%', right: '0', backgroundColor: 'rgba(25, 30, 35, 0.98)',
-                                    border: '1rem solid rgba(255,255,255,0.2)', borderRadius: '4rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                    zIndex: 100, display: 'flex', flexDirection: 'column', minWidth: '100rem'
-                                }}>
-                                    {['airplane', 'ship'].map(tab => (
+                            <Scrollable
+                                id="btv-busiest-stops-container"
+                                vertical={true}
+                                style={{ padding: '8rem 4rem 8rem 8rem', flex: 1, minHeight: 0, position: 'relative' }}
+                            >
+                                {busiestStops.length === 0 ? (
+                                    <div style={{ padding: '20rem', textAlign: 'center', color: '#666', fontSize: '13rem' }}>No crowded stops found.</div>
+                                ) : (
+                                    busiestStops.map((stop, sIdx) => (
                                         <div
-                                            key={tab}
-                                            onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }}
+                                            key={stop.id || sIdx}
                                             style={{
-                                                padding: '10rem 15rem', cursor: 'pointer', fontSize: '13rem',
-                                                color: activeTab === tab ? '#4287f5' : '#ccc',
-                                                backgroundColor: activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                                borderBottom: '1rem solid rgba(255,255,255,0.05)'
+                                                marginBottom: '10rem',
+                                                backgroundColor: 'rgba(255,255,255,0.05)',
+                                                borderRadius: '6rem',
+                                                padding: '10rem 12rem',
+                                                borderLeft: '4rem solid #ffb703',
+                                                border: '1rem solid rgba(255,255,255,0.08)'
                                             }}
-                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent'}
                                         >
-                                            {tab === 'airplane' ? 'Air' : 'Ship'}
+                                            {/* Stop Header */}
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8rem' }}>
+                                                <div
+                                                    onClick={() => trigger("BetterTransitView", "showVanillaLineInfo", stop.id)}
+                                                    title="Click to jump to stop location on map"
+                                                    style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', minWidth: 0, flex: 1, marginRight: '10rem' }}
+                                                >
+                                                    {(() => {
+                                                        const types = Array.from(new Set(stop.lines.map(l => l.type).filter(Boolean))) as TransitType[];
+                                                        const displayTypes = types.length > 0 ? types : ['bus' as TransitType];
+                                                        return (
+                                                            <div style={{ marginRight: '8rem', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                                                                {displayTypes.map(t => (
+                                                                    <span key={t} style={{ marginRight: '4rem', display: 'flex', alignItems: 'center' }} title={`Type: ${t}`}>
+                                                                        <TransportTypeIcon type={t} />
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                    <span style={{ fontWeight: 'bold', fontSize: '15rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {stop.name}
+                                                    </span>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', color: '#fff', fontWeight: 'bold', fontSize: '13rem', flexShrink: 0 }} title="Total Passengers Waiting at Stop">
+                                                    <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{stop.totalWaiting}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Connected Lines List */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: '4rem', padding: '6rem 8rem' }}>
+                                                {stop.lines.map((line, lIdx) => (
+                                                    <div
+                                                        key={line.id || lIdx}
+                                                        onClick={() => handleJumpToLineAndStop(line.id, line.type, stop.id)}
+                                                        title="Click to switch to this line & jump to stop"
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            fontSize: '12rem',
+                                                            cursor: 'pointer',
+                                                            padding: '4rem 8rem',
+                                                            marginBottom: lIdx < stop.lines.length - 1 ? '4rem' : '0',
+                                                            borderRadius: '4rem',
+                                                            transition: 'background-color 0.15s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                    >
+                                                        <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1, marginRight: '10rem' }}>
+                                                            <div style={{
+                                                                width: '4rem',
+                                                                height: '16rem',
+                                                                backgroundColor: line.color || '#4287f5',
+                                                                borderRadius: '2rem',
+                                                                flexShrink: 0,
+                                                                marginRight: '8rem'
+                                                            }} />
+                                                            <span style={{
+                                                                fontSize: '13rem',
+                                                                fontWeight: 600,
+                                                                color: '#fff',
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis'
+                                                            }}>
+                                                                {line.name}
+                                                            </span>
+                                                        </div>
+
+                                                        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                                                            <span style={{ display: 'flex', alignItems: 'center', marginRight: '14rem', color: line.waiting > 0 ? '#ffffff' : '#888', fontWeight: line.waiting > 0 ? '600' : 'normal', fontSize: '11rem' }} title="Passengers Waiting on this Line">
+                                                                <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{line.waiting}</span>
+                                                            </span>
+                                                            {line.waitTime > 0 && (
+                                                                <span style={{ display: 'flex', alignItems: 'center', marginRight: '10rem', color: '#aaa', fontSize: '11rem' }} title="Average Wait Time on this Line">
+                                                                    <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{line.waitTime}m</span>
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    <div style={{ padding: '10rem 15rem', backgroundColor: 'rgba(0,0,0,0.2)', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-
-                            <div style={{ display: 'flex', alignItems: 'center', fontSize: '12rem', color: '#888' }}>
-                                Sort: &nbsp;
-                                <CustomDropdown
-                                    value={sortField}
-                                    options={sortOptions.map(opt => ({ value: opt, label: sortLabels[opt] }))}
-                                    onChange={(val) => setSortField(val as SortField)}
-                                />
-                                <button onClick={() => setSortDesc(!sortDesc)} style={{ background: 'rgba(255,255,255,0.05)', border: '1rem solid rgba(255,255,255,0.1)', borderRadius: '4rem', color: '#fff', cursor: 'pointer', padding: '4rem 8rem', marginLeft: '1rem', fontSize: '12rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {sortDesc ? 'DESC ↓' : 'ASC ↑'}
-                                </button>
-                            </div>
-
-                            {/* TOOL BUTTON */}
-                            <button
-                                onClick={() => trigger("BetterTransitView", "activateTransitTool", activeTab)}
-                                style={{ marginLeft: '15rem', backgroundColor: '#4287f5', border: 'none', borderRadius: '4rem', color: 'white', padding: '4rem 10rem', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '12rem', fontWeight: 'bold' }}
-                                title={`Equip ${activeTab} tool`}
-                            >
-                                <ToolIcon /> &nbsp;Tool
-                            </button>
-
-                            {/* PICKER BUTTON */}
-                            <button
-                                onClick={() => {
-                                    trigger("BetterTransitView", "toggleMapPicker", !isPickerMode);
-                                }}
-                                style={{ marginLeft: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', backgroundColor: isPickerMode ? 'rgba(255, 0, 0, 0.5)' : 'rgba(255,255,255,0.05)', color: isPickerMode ? 'white' : '#aaa', border: '1rem solid rgba(255,255,255,0.1)' }}
-                                title="Pick a line on the map"
-                            >
-                                <CrosshairIcon />
-                            </button>
-
-                        </div>
-                        <div onClick={toggleTabAll} style={{ display: 'flex', alignItems: 'center', fontSize: '13rem', cursor: 'pointer', color: '#fff' }}>
-                            Toggle Tab <CustomCheckbox checked={allVisibleInTab} onChange={() => { }} />
-                        </div>
-                    </div>
-
-                    <Scrollable
-                        id="btv-transit-list-container"
-                        vertical={true}
-                        style={{ padding: '8rem 4rem 8rem 8rem', flex: 1, minHeight: 0, position: 'relative' }}
-                    >
-                        {sortedLines.length === 0 ? (
-                            <div style={{ padding: '20rem', textAlign: 'center', color: '#666', fontSize: '13rem' }}>No lines found.</div>
-                        ) : sortedLines.map(line => (
-                            <div id={`transit-line-${line.id}`} key={line.id} onClick={() => toggleLine(line.id)} style={{ display: 'flex', alignItems: 'center', padding: '10rem', marginBottom: '8rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6rem', borderLeft: `4rem solid ${line.color}`, cursor: 'pointer' }}>
-
-                                {/* Type Icon is dynamically added in the Cargo Tab */}
-                                {activeTab === 'cargo' && (
-                                    <div style={{ marginRight: '10rem', display: 'flex', alignItems: 'center' }} title={`Type: ${line.type}`}>
-                                        <TransportTypeIcon type={line.type} />
-                                    </div>
+                                    ))
                                 )}
+                            </Scrollable>
+                        </div>
+                    ) : (
+                        <>
+                            <div style={{ display: 'flex', borderBottom: '1rem solid rgba(255,255,255,0.1)', position: 'relative' }}>
+                                {activeTabs.map((tab) => (
+                                    <button key={tab} onClick={() => { setActiveTab(tab); setIsOverflowOpen(false); }} style={{ flex: 1, padding: '10rem 0', cursor: 'pointer', fontSize: '13rem', background: activeTab === tab ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: activeTab === tab ? 'white' : '#888', borderBottom: activeTab === tab ? '2rem solid #4287f5' : '2rem solid transparent' }}>
+                                        {tab === 'busiest' ? 'Busiest' : (tab.charAt(0).toUpperCase() + tab.slice(1))}
+                                    </button>
+                                ))}
 
-                                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                                    <div style={{ fontWeight: 'bold', fontSize: '16rem', marginBottom: '8rem', display: 'flex', alignItems: 'center' }}>
-                                        <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                                            {line.name} &nbsp;
-                                        </span>
-                                        <div
-                                            onClick={(e) => {
-                                                e.stopPropagation(); // Prevents the row from toggling visibility
-                                                trigger("BetterTransitView", "showVanillaLineInfo", line.id);
-                                            }}
-                                            title="Inspect Route"
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', borderRadius: '4rem', transition: 'background-color 0.1s', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.05)' }}
-                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
-                                        >
-                                            <SearchIcon />
+                                {/* OVERFLOW BUTTON */}
+                                <button
+                                    onClick={() => setIsOverflowOpen(!isOverflowOpen)}
+                                    style={{
+                                        padding: '10rem 15rem', cursor: 'pointer', background: 'transparent', border: 'none',
+                                        borderBottom: (activeTab === 'airplane' || activeTab === 'ship') ? '2rem solid #4287f5' : '2rem solid transparent',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}
+                                >
+                                    <MoreIcon />
+                                </button>
+
+                                {/* DROPDOWN MENU */}
+                                {isOverflowOpen && (
+                                    <>
+                                        {/* Invisible click-away overlay */}
+                                        <div onClick={() => setIsOverflowOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
+
+                                        <div style={{
+                                            position: 'absolute', top: '100%', right: '0', backgroundColor: 'rgba(25, 30, 35, 0.98)',
+                                            border: '1rem solid rgba(255,255,255,0.2)', borderRadius: '4rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                            zIndex: 100, display: 'flex', flexDirection: 'column', minWidth: '100rem'
+                                        }}>
+                                            {['airplane', 'ship'].map(tab => (
+                                                <div
+                                                    key={tab}
+                                                    onClick={() => { setActiveTab(tab as TransitType); setIsOverflowOpen(false); }}
+                                                    style={{
+                                                        padding: '10rem 15rem', cursor: 'pointer', fontSize: '13rem',
+                                                        color: activeTab === tab ? '#4287f5' : '#ccc',
+                                                        backgroundColor: activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                                        borderBottom: '1rem solid rgba(255,255,255,0.05)'
+                                                    }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent'}
+                                                >
+                                                    {tab === 'airplane' ? 'Air' : 'Ship'}
+                                                </div>
+                                            ))}
                                         </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div style={{ padding: '10rem 15rem', backgroundColor: 'rgba(0,0,0,0.2)', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', fontSize: '12rem', color: '#888' }}>
+                                        Sort: &nbsp;
+                                        <CustomDropdown
+                                            value={sortField}
+                                            options={sortOptions.map(opt => ({ value: opt, label: sortLabels[opt] }))}
+                                            onChange={(val) => setSortField(val as SortField)}
+                                        />
+                                        <button onClick={() => setSortDesc(!sortDesc)} style={{ background: 'rgba(255,255,255,0.05)', border: '1rem solid rgba(255,255,255,0.1)', borderRadius: '4rem', color: '#fff', cursor: 'pointer', padding: '4rem 8rem', marginLeft: '1rem', fontSize: '12rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            {sortDesc ? 'DESC ↓' : 'ASC ↑'}
+                                        </button>
                                     </div>
 
+                                    {/* TOOL BUTTON */}
+                                    <button
+                                        onClick={() => trigger("BetterTransitView", "activateTransitTool", activeTab === 'busiest' ? 'bus' : activeTab)}
+                                        style={{ marginLeft: '15rem', backgroundColor: '#4287f5', border: 'none', borderRadius: '4rem', color: 'white', padding: '4rem 10rem', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '12rem', fontWeight: 'bold' }}
+                                        title={`Equip ${activeTab === 'busiest' ? 'bus' : activeTab} tool`}
+                                    >
+                                        <ToolIcon /> &nbsp;Tool
+                                    </button>
 
-                                    <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
+                                    {/* PICKER BUTTON */}
+                                    <button
+                                        onClick={() => {
+                                            trigger("BetterTransitView", "toggleMapPicker", !isPickerMode);
+                                        }}
+                                        style={{ marginLeft: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', backgroundColor: isPickerMode ? 'rgba(255, 0, 0, 0.5)' : 'rgba(255,255,255,0.05)', color: isPickerMode ? 'white' : '#aaa', border: '1rem solid rgba(255,255,255,0.1)' }}
+                                        title="Pick a line on the map"
+                                    >
+                                        <CrosshairIcon />
+                                    </button>
 
-                                        <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Length">
-                                            <LengthIcon /> {line.length}
-                                        </span>
-
-                                        <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Stops">
-                                            <StopIcon /> {line.stops || 0}
-                                        </span>
-
-                                        <span style={{
-                                            display: 'flex', alignItems: 'center', width: '65rem',
-                                            color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
-                                            fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
-                                        }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
-                                        >
-                                            <VehicleIcon /> <span style={{ marginLeft: '2rem' }}>{line.vehicles}</span>
-
-                                            {line.hasShortage ? <span style={{ marginLeft: '2rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
-                                        </span>
-
-                                        {line.cargo ? (
-                                            <span style={{ display: 'flex', alignItems: 'center', width: '75rem' }} title="Cargo Transported">
-                                                <CargoIcon /> {((line.passengers || 0) / 1000).toFixed(0)} t
-                                            </span>
-                                        ) : (
-                                            <span style={{ display: 'flex', alignItems: 'center', width: '75rem' }} title="Passengers">
-                                                <PassengerIcon /> {line.passengers || 0}
-                                            </span>
-                                        )}
-
-                                        <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Usage">
-                                            <UsageIcon /> {line.usage}%
-                                        </span>
-                                    </div>
                                 </div>
-
-                                {/* Dummy onChange protects bubbling conflicts but relies on row's click trigger natively */}
-                                <div style={{ marginLeft: '15rem', flexShrink: 0 }}>
-                                    <CustomCheckbox checked={activeLines.has(line.id)} onChange={() => { }} />
+                                <div onClick={toggleTabAll} style={{ display: 'flex', alignItems: 'center', fontSize: '13rem', cursor: 'pointer', color: '#fff' }}>
+                                    Toggle Tab <CustomCheckbox checked={allVisibleInTab} onChange={() => { }} />
                                 </div>
                             </div>
-                        ))}
-                    </Scrollable>
+
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                <Scrollable
+                                    id="btv-transit-list-container"
+                                    vertical={true}
+                                    style={{ padding: '8rem 4rem 8rem 8rem', flex: 1, minHeight: 0, position: 'relative' }}
+                                >
+                                    {sortedLines.length === 0 ? (
+                                        <div style={{ padding: '20rem', textAlign: 'center', color: '#666', fontSize: '13rem' }}>No lines found.</div>
+                                    ) : sortedLines.map(line => {
+                                        const isExpanded = expandedLineId === line.id;
+                                        return (
+                                            <React.Fragment key={line.id}>
+                                                <div id={`transit-line-${line.id}`} onClick={() => toggleLine(line.id)} style={{ display: 'flex', alignItems: 'center', padding: '10rem', marginBottom: isExpanded ? '0' : '8rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: isExpanded ? '6rem 6rem 0 0' : '6rem', borderLeft: `4rem solid ${line.color}`, cursor: 'pointer' }}>
+
+                                                    {/* Expand Arrow Button */}
+                                                    <div
+                                                        onClick={(e) => toggleExpand(line.id, e)}
+                                                        style={{
+                                                            margin: '-6rem 8rem -6rem -6rem',
+                                                            padding: '10rem 12rem',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: '#aaa',
+                                                            borderRadius: '4rem',
+                                                            transition: 'all 0.15s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.color = '#aaa'}
+                                                        title="Expand Stops"
+                                                    >
+                                                        {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                                                    </div>
+
+                                                    {/* Type Icon is dynamically added in Cargo or Busiest Tab */}
+                                                    {(activeTab === 'cargo' || activeTab === 'busiest') && (
+                                                        <div style={{ marginRight: '10rem', display: 'flex', alignItems: 'center' }} title={`Type: ${line.type}`}>
+                                                            <TransportTypeIcon type={line.type} />
+                                                        </div>
+                                                    )}
+
+                                                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                                                        <div style={{ fontWeight: 'bold', fontSize: '16rem', marginBottom: '8rem', display: 'flex', alignItems: 'center' }}>
+                                                            <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                                                {line.name} &nbsp;
+                                                            </span>
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    trigger("BetterTransitView", "showVanillaLineInfo", line.id);
+                                                                }}
+                                                                title="Inspect Route"
+                                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', borderRadius: '4rem', transition: 'background-color 0.1s', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.05)' }}
+                                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                                                            >
+                                                                <SearchIcon />
+                                                            </div>
+                                                        </div>
+
+
+                                                        <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
+
+                                                            {/* Prominent Passengers Waiting & Avg Wait Time in Busiest Mode */}
+                                                            {isBusiestMode ? (
+                                                                <>
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '65rem', color: (line.waitingPassengers || 0) > 0 ? '#ffffff' : '#bbb', fontWeight: (line.waitingPassengers || 0) > 0 ? 'bold' : 'normal' }} title="Waiting Passengers">
+                                                                        <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{line.waitingPassengers || 0}</span>
+                                                                    </span>
+
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '65rem', color: '#bbb' }} title="Average Wait Time">
+                                                                        <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{line.avgWaitTime || 0}m</span>
+                                                                    </span>
+
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '55rem' }} title="Stops">
+                                                                        <StopIcon /> {line.stops || 0}
+                                                                    </span>
+
+                                                                    <span style={{
+                                                                        display: 'flex', alignItems: 'center', width: '55rem',
+                                                                        color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
+                                                                        fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
+                                                                    }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
+                                                                    >
+                                                                        <VehicleIcon /> <span style={{ marginLeft: '2rem' }}>{line.vehicles}</span>
+
+                                                                        {line.hasShortage ? <span style={{ marginLeft: '2rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Length">
+                                                                        <LengthIcon /> {line.length}
+                                                                    </span>
+
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Stops">
+                                                                        <StopIcon /> {line.stops || 0}
+                                                                    </span>
+
+                                                                    <span style={{
+                                                                        display: 'flex', alignItems: 'center', width: '65rem',
+                                                                        color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
+                                                                        fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
+                                                                    }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
+                                                                    >
+                                                                        <VehicleIcon /> <span style={{ marginLeft: '2rem' }}>{line.vehicles}</span>
+
+                                                                        {line.hasShortage ? <span style={{ marginLeft: '2rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
+                                                                    </span>
+
+                                                                    {line.cargo ? (
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '75rem' }} title="Cargo Transported">
+                                                                            <CargoIcon /> {((line.passengers || 0) / 1000).toFixed(0)} t
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '75rem' }} title="Passengers">
+                                                                            <PassengerIcon /> {line.passengers || 0}
+                                                                        </span>
+                                                                    )}
+
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Usage">
+                                                                        <UsageIcon /> {line.usage}%
+                                                                    </span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{ marginLeft: '15rem', flexShrink: 0 }}>
+                                                        <CustomCheckbox checked={activeLines.has(line.id)} onChange={() => { }} />
+                                                    </div>
+                                                </div>
+
+                                                {/* Expanded Stops List */}
+                                                {isExpanded && (
+                                                    <div style={{ marginBottom: '8rem', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '0 0 6rem 6rem', overflow: 'hidden', borderLeft: `4rem solid ${line.color}`, borderBottom: '1rem solid rgba(255,255,255,0.05)', borderRight: '1rem solid rgba(255,255,255,0.05)' }}>
+                                                        {(!line.stopList || line.stopList.length === 0) ? (
+                                                            <div style={{ padding: '8rem 15rem', color: '#888', fontSize: '12rem', fontStyle: 'italic' }}>No stops found for this line.</div>
+                                                        ) : (
+                                                            line.stopList.map((stop, sIdx) => (
+                                                                <div
+                                                                    key={stop.id || sIdx}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        trigger("BetterTransitView", "showVanillaLineInfo", stop.id);
+                                                                    }}
+                                                                    title="Click to jump to stop location"
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'space-between',
+                                                                        padding: '7rem 14rem 7rem 20rem',
+                                                                        borderBottom: sIdx < line.stopList!.length - 1 ? '1rem solid rgba(255,255,255,0.05)' : 'none',
+                                                                        fontSize: '13rem',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'background-color 0.15s ease'
+                                                                    }}
+                                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)'}
+                                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                                >
+                                                                    <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1, marginRight: '12rem', overflow: 'hidden' }}>
+                                                                        <div style={{ marginRight: '6rem', display: 'flex', alignItems: 'center', opacity: 0.8, flexShrink: 0 }}>
+                                                                            <StopIcon />
+                                                                        </div>
+                                                                        <span
+                                                                            title={stop.name}
+                                                                            style={{
+                                                                                whiteSpace: 'nowrap',
+                                                                                overflow: 'hidden',
+                                                                                textOverflow: 'ellipsis',
+                                                                                color: '#fff',
+                                                                                fontWeight: 500,
+                                                                                maxWidth: '140rem',
+                                                                                flexShrink: 0
+                                                                            }}
+                                                                        >
+                                                                            {stop.name}
+                                                                        </span>
+                                                                        {stop.connectingLines && stop.connectingLines.length > 0 && (
+                                                                            <div style={{ display: 'flex', alignItems: 'center', marginLeft: '6rem', flexShrink: 0, overflow: 'hidden' }}>
+                                                                                {(() => {
+                                                                                    const isMultiple = stop.connectingLines.length > 1;
+                                                                                    return stop.connectingLines.map((connLine, cIdx) => (
+                                                                                        <span
+                                                                                            key={connLine.id || cIdx}
+                                                                                            title={`${connLine.name} (Click to jump to line)`}
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                handleJumpToLineAndStop(connLine.id, line.type, stop.id);
+                                                                                            }}
+                                                                                            style={isMultiple ? {
+                                                                                                width: '16rem',
+                                                                                                height: '10rem',
+                                                                                                borderRadius: '5rem',
+                                                                                                backgroundColor: connLine.color || '#4287f5',
+                                                                                                display: 'inline-block',
+                                                                                                cursor: 'pointer',
+                                                                                                boxShadow: '0 1rem 3rem rgba(0,0,0,0.4)',
+                                                                                                border: '1rem solid rgba(255,255,255,0.3)',
+                                                                                                flexShrink: 0,
+                                                                                                marginRight: '4rem'
+                                                                                            } : {
+                                                                                                backgroundColor: connLine.color || '#4287f5',
+                                                                                                color: '#fff',
+                                                                                                fontSize: '10rem',
+                                                                                                fontWeight: 'bold',
+                                                                                                padding: '1.5rem 6rem',
+                                                                                                borderRadius: '8rem',
+                                                                                                whiteSpace: 'nowrap',
+                                                                                                cursor: 'pointer',
+                                                                                                boxShadow: '0 1rem 3rem rgba(0,0,0,0.4)',
+                                                                                                textShadow: '0 1rem 2rem rgba(0,0,0,0.5)',
+                                                                                                flexShrink: 0,
+                                                                                                marginRight: '4rem',
+                                                                                                maxWidth: '110rem',
+                                                                                                overflow: 'hidden',
+                                                                                                textOverflow: 'ellipsis'
+                                                                                            }}
+                                                                                        >
+                                                                                            {!isMultiple && connLine.name}
+                                                                                        </span>
+                                                                                    ));
+                                                                                })()}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: 'auto', paddingLeft: '10rem' }}>
+                                                                        <span style={{ display: 'flex', alignItems: 'center', marginRight: '14rem', color: stop.waiting > 0 ? '#ffffff' : '#888', fontWeight: stop.waiting > 0 ? '600' : 'normal', fontSize: '12rem' }} title="Passengers Waiting">
+                                                                            <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waiting}</span>
+                                                                        </span>
+                                                                        {stop.waitTime > 0 && (
+                                                                            <span style={{ display: 'flex', alignItems: 'center', color: '#aaa', fontSize: '12rem' }} title="Average Wait Time">
+                                                                                <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waitTime}m</span>
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </Scrollable>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </>

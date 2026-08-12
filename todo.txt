@@ -1,1 +1,10 @@
-﻿- show day/night route icons
+﻿
+
+starting in map mode every first time?
+esc to close, if last open screen
+new screenshots
+
+show nearby lines of any transit type (exclude from the same line). show as colored icons (line color w type icon)
+
+
+- show day/night route icons
