@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo, useRef } from 'react';
 import { bindValue, trigger, useValue } from "cs2/api";
-import { Scrollable } from "cs2/ui";
+import { Scrollable, Tooltip } from "cs2/ui";
 import { TransitType, SortField, TransitLine } from './types';
 import { VanillaComponentResolver } from "./VanillaComponentResolver";
 
@@ -102,7 +102,16 @@ const ChevronDownIcon = memo(() => (
     </svg>
 ));
 
-const TransportTypeIcon = memo(({ type }: { type: TransitType }) => {
+const TransportTypeIcon = memo(({ type, style, noCircle }: { type: TransitType, style?: React.CSSProperties, noCircle?: boolean }) => {
+    const svgFill = style?.fill || "#bbb";
+    if (type === 'subway' && !noCircle) {
+        return (
+            <svg viewBox="0 0 24 24" style={{ width: '18rem', height: '18rem', ...style }} fill={svgFill}>
+                <circle cx="12" cy="12" r="10" fill="none" stroke={svgFill} strokeWidth="1.8" />
+                <path transform="translate(3.6, 3.6) scale(0.7)" d="M12 2c-4 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-4-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm4 0h-2V6h2v4zm2.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+            </svg>
+        );
+    }
     let path = "";
     switch (type) {
         case 'train':
@@ -124,7 +133,7 @@ const TransportTypeIcon = memo(({ type }: { type: TransitType }) => {
             path = "M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15 6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.37v6.71l6-3.38z"; // Cargo Box
     }
     return (
-        <svg viewBox="0 0 24 24" style={{ width: '18rem', height: '18rem' }} fill="#bbb">
+        <svg viewBox="0 0 24 24" style={{ width: '18rem', height: '18rem', ...style }} fill={svgFill}>
             <path d={path} />
         </svg>
     );
@@ -427,6 +436,18 @@ export const TransitPanel = () => {
         };
     }, [isVisible]);
 
+    // Handle Escape key to request closing the UI if it's the last open screen
+    /*useEffect(() => {
+        if (!isVisible) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                trigger("BetterTransitView", "handleEscapeKey");
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown, true);
+        return () => window.removeEventListener("keydown", handleKeyDown, true);
+    }, [isVisible]);*/
+
 
     useEffect(() => {
         if (selectedTransitLine !== 0 && lines.length > 0) {
@@ -455,9 +476,7 @@ export const TransitPanel = () => {
                                 const containerRect = container.getBoundingClientRect();
                                 const relativeTop = (elRect.top - containerRect.top) + container.scrollTop;
                                 const targetScroll = relativeTop - (container.clientHeight / 2) + (el.clientHeight / 2);
-                                console.log('before', container.scrollTop, 'target', targetScroll);
                                 container.scrollTop = Math.max(0, targetScroll);
-                                console.log('after', container.scrollTop);
                                 container.dispatchEvent(new Event('scroll', { bubbles: true }));
                                 break;
                             }
@@ -592,26 +611,27 @@ export const TransitPanel = () => {
     if (!isVisible) return null;
 
     return (
-        <> {isPickerMode && (
-            <div style={{
-                position: 'absolute',
-                top: '10vh',
-                left: '50vw',
-                transform: 'translateX(-50%)',
-                backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                padding: '15rem 30rem',
-                borderRadius: '10rem',
-                color: 'white',
-                fontSize: '22rem',
-                fontWeight: 'bold',
-                zIndex: 9999,
-                pointerEvents: 'none',
-                border: '2rem solid rgba(255, 255, 255, 0.2)',
-                boxShadow: '0 4rem 20rem rgba(0, 0, 0, 0.6)'
-            }}>
-                Click a transit line on the map
-            </div>
-        )}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0, pointerEvents: 'none' }}>
+            {isPickerMode && (
+                <div style={{
+                    position: 'absolute',
+                    top: '10vh',
+                    left: '50vw',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: '15rem 30rem',
+                    borderRadius: '10rem',
+                    color: 'white',
+                    fontSize: '22rem',
+                    fontWeight: 'bold',
+                    zIndex: 9999,
+                    pointerEvents: 'none',
+                    border: '2rem solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 4rem 20rem rgba(0, 0, 0, 0.6)'
+                }}>
+                    Click a transit line on the map
+                </div>
+            )}
             <div style={{
                 position: 'absolute',
                 top: '60rem',
@@ -626,7 +646,8 @@ export const TransitPanel = () => {
                         backgroundColor: `rgba(42, 55, 83, ${panelOpacity})`,
                         backdropFilter: theme?.toolOptionsPanel ? undefined : 'blur(10px)',
                         border: '1rem solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: theme?.toolOptionsPanel ? undefined : '6rem'
+                        borderRadius: theme?.toolOptionsPanel ? undefined : '6rem',
+                        boxShadow: '0 4rem 20rem rgba(0, 0, 0, 0.5)'
                     }}>
 
                     <div style={{ padding: '10rem', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -902,8 +923,8 @@ export const TransitPanel = () => {
                                                     <div
                                                         onClick={(e) => toggleExpand(line.id, e)}
                                                         style={{
-                                                            margin: '-6rem 8rem -6rem -6rem',
-                                                            padding: '10rem 12rem',
+                                                            marginRight: '6rem',
+                                                            padding: '4rem',
                                                             cursor: 'pointer',
                                                             display: 'flex',
                                                             alignItems: 'center',
@@ -927,7 +948,7 @@ export const TransitPanel = () => {
                                                     )}
 
                                                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                                                        <div style={{ fontWeight: 'bold', fontSize: '16rem', marginBottom: '8rem', display: 'flex', alignItems: 'center' }}>
+                                                        <div style={{ fontWeight: 'bold', fontSize: '16rem', marginBottom: '6rem', display: 'flex', alignItems: 'center' }}>
                                                             <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                                                                 {line.name} &nbsp;
                                                             </span>
@@ -946,21 +967,21 @@ export const TransitPanel = () => {
                                                         </div>
 
 
-                                                        <div style={{ fontSize: '14rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
+                                                        <div style={{ fontSize: '13rem', color: '#bbb', display: 'flex', flexWrap: 'wrap', rowGap: '8rem' }}>
 
                                                             {/* Prominent Passengers Waiting & Avg Wait Time in Busiest Mode */}
                                                             {isBusiestMode ? (
                                                                 <>
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '65rem', color: (line.waitingPassengers || 0) > 0 ? '#ffffff' : '#bbb', fontWeight: (line.waitingPassengers || 0) > 0 ? 'bold' : 'normal' }} title="Waiting Passengers">
-                                                                        <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{line.waitingPassengers || 0}</span>
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '62rem', color: (line.waitingPassengers || 0) > 0 ? '#ffffff' : '#bbb', fontWeight: (line.waitingPassengers || 0) > 0 ? 'bold' : 'normal' }} title="Waiting Passengers">
+                                                                        <PassengerIcon /> <span style={{ marginLeft: '3rem' }}>{line.waitingPassengers || 0}</span>
                                                                     </span>
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '65rem', color: '#bbb' }} title="Average Wait Time">
-                                                                        <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{line.avgWaitTime || 0}m</span>
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '62rem', color: '#bbb' }} title="Average Wait Time">
+                                                                        <WaitTimeIcon /> <span style={{ marginLeft: '3rem' }}>{line.avgWaitTime || 0}m</span>
                                                                     </span>
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '55rem' }} title="Stops">
-                                                                        <StopIcon /> {line.stops || 0}
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '52rem' }} title="Stops">
+                                                                        <StopIcon /> <span style={{ marginLeft: '3rem' }}>{line.stops || 0}</span>
                                                                     </span>
 
                                                                     <span style={{
@@ -969,19 +990,19 @@ export const TransitPanel = () => {
                                                                         fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
                                                                     }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
                                                                     >
-                                                                        <VehicleIcon /> <span style={{ marginLeft: '2rem' }}>{line.vehicles}</span>
+                                                                        <VehicleIcon /> <span style={{ marginLeft: '3rem' }}>{line.vehicles}</span>
 
-                                                                        {line.hasShortage ? <span style={{ marginLeft: '2rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
+                                                                        {line.hasShortage ? <span style={{ marginLeft: '3rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
                                                                     </span>
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '80rem' }} title="Length">
-                                                                        <LengthIcon /> {line.length}
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '78rem' }} title="Length">
+                                                                        <LengthIcon /> <span style={{ marginLeft: '3rem' }}>{line.length}</span>
                                                                     </span>
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Stops">
-                                                                        <StopIcon /> {line.stops || 0}
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '55rem' }} title="Stops">
+                                                                        <StopIcon /> <span style={{ marginLeft: '3rem' }}>{line.stops || 0}</span>
                                                                     </span>
 
                                                                     <span style={{
@@ -990,23 +1011,23 @@ export const TransitPanel = () => {
                                                                         fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
                                                                     }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
                                                                     >
-                                                                        <VehicleIcon /> <span style={{ marginLeft: '2rem' }}>{line.vehicles}</span>
+                                                                        <VehicleIcon /> <span style={{ marginLeft: '3rem' }}>{line.vehicles}</span>
 
-                                                                        {line.hasShortage ? <span style={{ marginLeft: '2rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
+                                                                        {line.hasShortage ? <span style={{ marginLeft: '3rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
                                                                     </span>
 
                                                                     {line.cargo ? (
-                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '75rem' }} title="Cargo Transported">
-                                                                            <CargoIcon /> {((line.passengers || 0) / 1000).toFixed(0)} t
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '70rem' }} title="Cargo Transported">
+                                                                            <CargoIcon /> <span style={{ marginLeft: '3rem' }}>{((line.passengers || 0) / 1000).toFixed(0)} t</span>
                                                                         </span>
                                                                     ) : (
-                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '75rem' }} title="Passengers">
-                                                                            <PassengerIcon /> {line.passengers || 0}
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '70rem' }} title="Passengers">
+                                                                            <PassengerIcon /> <span style={{ marginLeft: '3rem' }}>{line.passengers || 0}</span>
                                                                         </span>
                                                                     )}
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '60rem' }} title="Usage">
-                                                                        <UsageIcon /> {line.usage}%
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '55rem' }} title="Usage">
+                                                                        <UsageIcon /> <span style={{ marginLeft: '3rem' }}>{line.usage}%</span>
                                                                     </span>
                                                                 </>
                                                             )}
@@ -1066,48 +1087,83 @@ export const TransitPanel = () => {
                                                                         {stop.connectingLines && stop.connectingLines.length > 0 && (
                                                                             <div style={{ display: 'flex', alignItems: 'center', marginLeft: '6rem', flexShrink: 0, overflow: 'hidden' }}>
                                                                                 {(() => {
-                                                                                    const isMultiple = stop.connectingLines.length > 1;
+                                                                                    const count = stop.connectingLines.length;
+                                                                                    let pillMaxWidth = '105rem';
+                                                                                    if (count === 2) pillMaxWidth = '55rem';
+                                                                                    else if (count === 3) pillMaxWidth = '36rem';
+                                                                                    const isTextlessPill = count >= 4;
+
                                                                                     return stop.connectingLines.map((connLine, cIdx) => (
-                                                                                        <span
-                                                                                            key={connLine.id || cIdx}
-                                                                                            title={`${connLine.name} (Click to jump to line)`}
-                                                                                            onClick={(e) => {
-                                                                                                e.stopPropagation();
-                                                                                                handleJumpToLineAndStop(connLine.id, line.type, stop.id);
-                                                                                            }}
-                                                                                            style={isMultiple ? {
-                                                                                                width: '16rem',
-                                                                                                height: '10rem',
-                                                                                                borderRadius: '5rem',
-                                                                                                backgroundColor: connLine.color || '#4287f5',
-                                                                                                display: 'inline-block',
-                                                                                                cursor: 'pointer',
-                                                                                                boxShadow: '0 1rem 3rem rgba(0,0,0,0.4)',
-                                                                                                border: '1rem solid rgba(255,255,255,0.3)',
-                                                                                                flexShrink: 0,
-                                                                                                marginRight: '4rem'
-                                                                                            } : {
-                                                                                                backgroundColor: connLine.color || '#4287f5',
-                                                                                                color: '#fff',
-                                                                                                fontSize: '10rem',
-                                                                                                fontWeight: 'bold',
-                                                                                                padding: '1.5rem 6rem',
-                                                                                                borderRadius: '8rem',
-                                                                                                whiteSpace: 'nowrap',
-                                                                                                cursor: 'pointer',
-                                                                                                boxShadow: '0 1rem 3rem rgba(0,0,0,0.4)',
-                                                                                                textShadow: '0 1rem 2rem rgba(0,0,0,0.5)',
-                                                                                                flexShrink: 0,
-                                                                                                marginRight: '4rem',
-                                                                                                maxWidth: '110rem',
-                                                                                                overflow: 'hidden',
-                                                                                                textOverflow: 'ellipsis'
-                                                                                            }}
-                                                                                        >
-                                                                                            {!isMultiple && connLine.name}
-                                                                                        </span>
+                                                                                        <Tooltip key={connLine.id || cIdx} tooltip={`${connLine.name}${connLine.type ? ` (${connLine.type})` : ''}`}>
+                                                                                            <span
+                                                                                                title={`${connLine.name} (Click to jump to line)`}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleJumpToLineAndStop(connLine.id, line.type, stop.id);
+                                                                                                }}
+                                                                                                style={isTextlessPill ? {
+                                                                                                    width: '24rem',
+                                                                                                    height: '11rem',
+                                                                                                    borderRadius: '4rem',
+                                                                                                    backgroundColor: connLine.color || '#4287f5',
+                                                                                                    display: 'inline-block',
+                                                                                                    cursor: 'pointer',
+                                                                                                    boxShadow: '0 1rem 3rem rgba(0,0,0,0.4)',
+                                                                                                    border: '1rem solid rgba(255,255,255,0.3)',
+                                                                                                    flexShrink: 0,
+                                                                                                    marginRight: '4rem'
+                                                                                                } : {
+                                                                                                    backgroundColor: connLine.color || '#4287f5',
+                                                                                                    color: '#fff',
+                                                                                                    fontSize: '10rem',
+                                                                                                    fontWeight: 'bold',
+                                                                                                    padding: '1.5rem 6rem',
+                                                                                                    borderRadius: '8rem',
+                                                                                                    whiteSpace: 'nowrap',
+                                                                                                    cursor: 'pointer',
+                                                                                                    boxShadow: '0 1rem 3rem rgba(0,0,0,0.4)',
+                                                                                                    textShadow: '0 1rem 2rem rgba(0,0,0,0.5)',
+                                                                                                    flexShrink: 0,
+                                                                                                    marginRight: '4rem',
+                                                                                                    maxWidth: pillMaxWidth,
+                                                                                                    overflow: 'hidden',
+                                                                                                    textOverflow: 'ellipsis'
+                                                                                                }}
+                                                                                            >
+                                                                                                {!isTextlessPill && connLine.name}
+                                                                                            </span>
+                                                                                        </Tooltip>
                                                                                     ));
                                                                                 })()}
+                                                                            </div>
+                                                                        )}
+                                                                        {stop.nearbyLines && stop.nearbyLines.length > 0 && (
+                                                                            <div style={{ display: 'flex', alignItems: 'center', marginLeft: '6rem', flexShrink: 0 }}>
+                                                                                {stop.nearbyLines.map((nearbyLine, nIdx) => (
+                                                                                    <Tooltip key={nearbyLine.id || nIdx} tooltip={`${nearbyLine.name} (${nearbyLine.type || 'transit'})`}>
+                                                                                        <span
+                                                                                            title={`${nearbyLine.name} (${nearbyLine.type || 'transit'}) - Nearby connection (Click to jump)`}
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                handleJumpToLineAndStop(nearbyLine.id, nearbyLine.type || 'bus', stop.id);
+                                                                                            }}
+                                                                                            style={{
+                                                                                                display: 'inline-flex',
+                                                                                                alignItems: 'center',
+                                                                                                justifyContent: 'center',
+                                                                                                cursor: 'pointer',
+                                                                                                flexShrink: 0,
+                                                                                                marginRight: '4rem',
+                                                                                                opacity: 0.75,
+                                                                                                transition: 'opacity 0.15s ease'
+                                                                                            }}
+                                                                                            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                                                                            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.75'}
+                                                                                        >
+                                                                                            <TransportTypeIcon type={nearbyLine.type || 'bus'} style={{ width: '15rem', height: '15rem', fill: nearbyLine.color || '#4287f5' }} />
+                                                                                        </span>
+                                                                                    </Tooltip>
+                                                                                ))}
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -1135,6 +1191,6 @@ export const TransitPanel = () => {
                     )}
                 </div>
             </div>
-        </>
+        </div>
     );
 };

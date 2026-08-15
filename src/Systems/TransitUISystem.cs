@@ -22,6 +22,7 @@ namespace BetterTransitView.Systems
     {
         private ToolSystem m_ToolSystem;
         private Game.UI.InGame.InfoviewsUISystem m_InfoviewsUISystem;
+        private Game.UI.InGame.SelectedInfoUISystem m_SelectedInfoUISystem;
 
         // UI Bindings
         private ValueBinding<bool> showTransitPanelBinding;
@@ -70,6 +71,7 @@ namespace BetterTransitView.Systems
 
             m_ToolSystem = World.GetOrCreateSystemManaged<ToolSystem>();
             m_InfoviewsUISystem = World.GetOrCreateSystemManaged<Game.UI.InGame.InfoviewsUISystem>();
+            m_SelectedInfoUISystem = World.GetOrCreateSystemManaged<Game.UI.InGame.SelectedInfoUISystem>();
 
             SetupCustomInfoview();
 
@@ -175,6 +177,8 @@ namespace BetterTransitView.Systems
             AddBinding(new TriggerBinding<bool>("BetterTransitView", "setShowInfoviewBackground", (show) => {
                 ShowInfoviewBackground = show;
                 this.showInfoviewBackgroundBinding.Update(show);
+                BetterTransitView.ModSettings.ModSettings.Instance.MapModeActivatedByDefault = show;
+                BetterTransitView.ModSettings.ModSettings.Instance.Apply();
     
                 if (this.IsTransitPanelActive) {
                     if (show && m_CustomInfoviewEntity != Entity.Null) {
@@ -183,6 +187,10 @@ namespace BetterTransitView.Systems
                         m_InfoviewsUISystem.SetActiveInfoview(Entity.Null);
                     }
                 }
+            }));
+
+            AddBinding(new TriggerBinding("BetterTransitView", "handleEscapeKey", () => {
+                TryCloseOnEscape();
             }));
 
             AddBinding(new TriggerBinding<string>("BetterTransitView", "activateTransitTool", (mode) => {
@@ -315,6 +323,34 @@ namespace BetterTransitView.Systems
             this.isMapPickerActiveBinding.Update(false);
         }
         
+        public void TryCloseOnEscape()
+        {
+            if (!this.IsTransitPanelActive) return;
+
+            var defaultTool = World.GetOrCreateSystemManaged<Game.Tools.DefaultToolSystem>();
+            bool toolActive = m_ToolSystem.activeTool != defaultTool;
+            bool entitySelected = m_SelectedInfoUISystem != null && m_SelectedInfoUISystem.selectedEntity != Entity.Null;
+
+            bool otherInfoviewActive = false;
+            if (!m_ActiveInfomodeQuery.IsEmptyIgnoreFilter)
+            {
+                using var statusDatas = m_ActiveInfomodeQuery.ToComponentDataArray<Game.Prefabs.InfoviewBuildingStatusData>(Unity.Collections.Allocator.Temp);
+                foreach (var status in statusDatas)
+                {
+                    if ((int)status.m_Type != (int)BetterTransitViewStatusType.Stations)
+                    {
+                        otherInfoviewActive = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!toolActive && !entitySelected && !otherInfoviewActive)
+            {
+                DeactivateTransitMode();
+            }
+        }
+        
         protected override void OnUpdate()
         {
             if (!Enabled) Enabled = true;
@@ -331,6 +367,12 @@ namespace BetterTransitView.Systems
                     m_ModeChangeRequested = true;
                 }
                 m_WasToggleKeyDown = isPressed;
+            }
+
+            // Check for Escape key press frame
+            if (this.IsTransitPanelActive && UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                TryCloseOnEscape();
             }
 
             // 2. Process Mode Changes Safely on the Main Thread
@@ -380,6 +422,8 @@ namespace BetterTransitView.Systems
                     {
                         ShowInfoviewBackground = isActuallyGray;
                         this.showInfoviewBackgroundBinding.Update(isActuallyGray);
+                        BetterTransitView.ModSettings.ModSettings.Instance.MapModeActivatedByDefault = isActuallyGray;
+                        BetterTransitView.ModSettings.ModSettings.Instance.Apply();
                     }
                 }
                 
@@ -536,6 +580,7 @@ namespace BetterTransitView.Systems
             var waitingPassengersLookup = GetComponentLookup<Game.Routes.WaitingPassengers>(true);
             var connectedLookup = GetComponentLookup<Game.Routes.Connected>(true);
             var transportStopLookup = GetComponentLookup<Game.Routes.TransportStop>(true);
+            var transformLookup = GetComponentLookup<Game.Objects.Transform>(true);
             float timeFactor = System.Math.Max(1f, BetterTransitView.Utils.Time2WorkInterop.GetTimeFactor());
 
             for (int i = 0; i < entities.Length; i++)
@@ -650,6 +695,7 @@ namespace BetterTransitView.Systems
                         }
 
                         Entity stopTarget = connectedLookup.TryGetComponent(wp, out var connectedComp) ? connectedComp.m_Connected : wp;
+                        Entity stopStationBuilding = GetStationBuilding(wp, stopTarget);
 
                         // Stop Name Resolution
                         string stopName = GetStopResolvedName(wp, stopTarget, nameSystem, stopIndexCounter);
@@ -660,6 +706,8 @@ namespace BetterTransitView.Systems
                         // Collect Connecting Lines at this stop
                         var connLinesJson = new System.Text.StringBuilder("[");
                         bool firstConn = true;
+                        var directConnectedEntities = new System.Collections.Generic.HashSet<Entity>();
+
                         for (int o = 0; o < entities.Length; o++)
                         {
                             Entity otherEntity = entities[o];
@@ -668,6 +716,10 @@ namespace BetterTransitView.Systems
 
                             if (EntityManager.TryGetBuffer(otherEntity, true, out DynamicBuffer<Game.Routes.RouteWaypoint> oWaypoints))
                             {
+                                var oPrefabRef = EntityManager.GetComponentData<Game.Prefabs.PrefabRef>(otherEntity);
+                                var oPrefab = prefabSystem.GetPrefab<Game.Prefabs.TransportLinePrefab>(oPrefabRef.m_Prefab);
+                                string oTypeStr = oPrefab != null ? oPrefab.m_TransportType.ToString().ToLower() : "bus";
+
                                 bool connects = false;
                                 for (int ow = 0; ow < oWaypoints.Length; ow++)
                                 {
@@ -678,10 +730,23 @@ namespace BetterTransitView.Systems
                                         connects = true;
                                         break;
                                     }
+
+                                    // Check if same type of transit and stops at the same station building (e.g. different platforms of the same subway station)
+                                    if (stopStationBuilding != Entity.Null && type == oTypeStr)
+                                    {
+                                        Entity oStationBuilding = GetStationBuilding(oWp, oTarget);
+                                        if (oStationBuilding != Entity.Null && oStationBuilding == stopStationBuilding)
+                                        {
+                                            connects = true;
+                                            break;
+                                        }
+                                    }
                                 }
 
                                 if (connects)
                                 {
+                                    directConnectedEntities.Add(otherEntity);
+
                                     string oName;
                                     if (nameSystem.TryGetCustomName(otherEntity, out string oCustomName) && !string.IsNullOrEmpty(oCustomName))
                                     {
@@ -689,8 +754,6 @@ namespace BetterTransitView.Systems
                                     }
                                     else if (EntityManager.TryGetComponent<Game.Routes.RouteNumber>(otherEntity, out var oNum))
                                     {
-                                        var oPrefabRef = EntityManager.GetComponentData<Game.Prefabs.PrefabRef>(otherEntity);
-                                        var oPrefab = prefabSystem.GetPrefab<Game.Prefabs.TransportLinePrefab>(oPrefabRef.m_Prefab);
                                         string oType = oPrefab != null ? oPrefab.m_TransportType.ToString() : "Route";
                                         oName = oNum.m_Number == 0 ? $"{oType} {otherEntity.Index}" : $"{oType} {oNum.m_Number}";
                                     }
@@ -704,15 +767,92 @@ namespace BetterTransitView.Systems
 
                                     string safeOName = oName?.Replace("\"", "\\\"") ?? "Route";
                                     if (!firstConn) connLinesJson.Append(",");
-                                    connLinesJson.Append($@"{{""id"": {otherEntity.Index}, ""name"": ""{safeOName}"", ""color"": ""{oColorHex}""}}");
+                                    connLinesJson.Append($@"{{""id"": {otherEntity.Index}, ""name"": ""{safeOName}"", ""color"": ""{oColorHex}"", ""type"": ""{oTypeStr}""}}");
                                     firstConn = false;
                                 }
                             }
                         }
                         connLinesJson.Append("]");
 
+                        // Collect Nearby Lines (within ~120m)
+                        var nearbyLinesJson = new System.Text.StringBuilder("[");
+                        bool firstNearby = true;
+
+                        Unity.Mathematics.float3 stopPos = Unity.Mathematics.float3.zero;
+                        if (transformLookup.TryGetComponent(wp, out var wpTrans)) stopPos = wpTrans.m_Position;
+                        else if (stopTarget != Entity.Null && transformLookup.TryGetComponent(stopTarget, out var targetTrans)) stopPos = targetTrans.m_Position;
+
+                        if (!stopPos.Equals(Unity.Mathematics.float3.zero))
+                        {
+                            for (int o = 0; o < entities.Length; o++)
+                            {
+                                Entity otherEntity = entities[o];
+                                if (otherEntity == entity) continue;
+                                if (directConnectedEntities.Contains(otherEntity)) continue;
+                                if (!EntityManager.HasComponent<Game.Routes.Color>(otherEntity)) continue;
+
+                                if (EntityManager.TryGetBuffer(otherEntity, true, out DynamicBuffer<Game.Routes.RouteWaypoint> oWaypoints))
+                                {
+                                    bool isNearby = false;
+                                    for (int ow = 0; ow < oWaypoints.Length; ow++)
+                                    {
+                                        Entity oWp = oWaypoints[ow].m_Waypoint;
+                                        Entity oTarget = connectedLookup.TryGetComponent(oWp, out var oConn) ? oConn.m_Connected : oWp;
+                                        
+                                        Unity.Mathematics.float3 oPos = Unity.Mathematics.float3.zero;
+                                        if (transformLookup.TryGetComponent(oWp, out var oWpTrans)) oPos = oWpTrans.m_Position;
+                                        else if (oTarget != Entity.Null && transformLookup.TryGetComponent(oTarget, out var oTargetTrans)) oPos = oTargetTrans.m_Position;
+
+                                        if (!oPos.Equals(Unity.Mathematics.float3.zero))
+                                        {
+                                            float distSq = Unity.Mathematics.math.distancesq(
+                                                new Unity.Mathematics.float2(stopPos.x, stopPos.z), 
+                                                new Unity.Mathematics.float2(oPos.x, oPos.z)
+                                            );
+                                            if (distSq <= 14400.0f) // 120m
+                                            {
+                                                isNearby = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if (isNearby)
+                                    {
+                                        var oPrefabRef = EntityManager.GetComponentData<Game.Prefabs.PrefabRef>(otherEntity);
+                                        var oPrefab = prefabSystem.GetPrefab<Game.Prefabs.TransportLinePrefab>(oPrefabRef.m_Prefab);
+                                        string oTypeStr = oPrefab != null ? oPrefab.m_TransportType.ToString().ToLower() : "bus";
+
+                                        string oName;
+                                        if (nameSystem.TryGetCustomName(otherEntity, out string oCustomName) && !string.IsNullOrEmpty(oCustomName))
+                                        {
+                                            oName = oCustomName;
+                                        }
+                                        else if (EntityManager.TryGetComponent<Game.Routes.RouteNumber>(otherEntity, out var oNum))
+                                        {
+                                            string oTypeDisplay = oPrefab != null ? oPrefab.m_TransportType.ToString() : "Route";
+                                            oName = oNum.m_Number == 0 ? $"{oTypeDisplay} {otherEntity.Index}" : $"{oTypeDisplay} {oNum.m_Number}";
+                                        }
+                                        else
+                                        {
+                                            oName = "Route";
+                                        }
+
+                                        var oColorComp = EntityManager.GetComponentData<Game.Routes.Color>(otherEntity);
+                                        string oColorHex = string.Format("#{0:X2}{1:X2}{2:X2}", oColorComp.m_Color.r, oColorComp.m_Color.g, oColorComp.m_Color.b);
+
+                                        string safeOName = oName?.Replace("\"", "\\\"") ?? "Route";
+                                        if (!firstNearby) nearbyLinesJson.Append(",");
+                                        nearbyLinesJson.Append($@"{{""id"": {otherEntity.Index}, ""name"": ""{safeOName}"", ""color"": ""{oColorHex}"", ""type"": ""{oTypeStr}""}}");
+                                        firstNearby = false;
+                                    }
+                                }
+                            }
+                        }
+                        nearbyLinesJson.Append("]");
+
                         if (!firstStop) stopsJson.Append(",");
-                        stopsJson.Append($@"{{""id"": {wp.Index}, ""targetId"": {stopTarget.Index}, ""name"": ""{safeStopName}"", ""waiting"": {stopWaiting}, ""waitTime"": {scaledWaitMin}, ""connectingLines"": {connLinesJson.ToString()}}}");
+                        stopsJson.Append($@"{{""id"": {wp.Index}, ""targetId"": {stopTarget.Index}, ""name"": ""{safeStopName}"", ""waiting"": {stopWaiting}, ""waitTime"": {scaledWaitMin}, ""connectingLines"": {connLinesJson.ToString()}, ""nearbyLines"": {nearbyLinesJson.ToString()}}}");
                         firstStop = false;
                     }
                 }
@@ -893,6 +1033,64 @@ namespace BetterTransitView.Systems
                     ecb.RemoveComponent<Game.Routes.HiddenRoute>(entity);
                 }
             }
+        }
+
+        private Entity GetStationBuilding(Entity wp, Entity stopTarget)
+        {
+            Entity check = stopTarget != Entity.Null ? stopTarget : wp;
+            if (check == Entity.Null) return Entity.Null;
+
+            if (EntityManager.HasComponent<Game.Buildings.Building>(check))
+                return check;
+
+            var targets = new Entity[] { check, wp };
+            foreach (var targetEnt in targets)
+            {
+                if (targetEnt == Entity.Null) continue;
+
+                if (EntityManager.HasComponent<Game.Buildings.Building>(targetEnt))
+                    return targetEnt;
+
+                // Check Owner Building chain
+                if (EntityManager.HasComponent<Game.Common.Owner>(targetEnt))
+                {
+                    Entity owner = EntityManager.GetComponentData<Game.Common.Owner>(targetEnt).m_Owner;
+                    int depth = 0;
+                    while (owner != Entity.Null && depth < 5)
+                    {
+                        depth++;
+                        if (EntityManager.HasComponent<Game.Buildings.Building>(owner))
+                            return owner;
+                        if (EntityManager.HasComponent<Game.Common.Owner>(owner))
+                            owner = EntityManager.GetComponentData<Game.Common.Owner>(owner).m_Owner;
+                        else if (EntityManager.HasComponent<Game.Objects.Attached>(owner))
+                            owner = EntityManager.GetComponentData<Game.Objects.Attached>(owner).m_Parent;
+                        else
+                            break;
+                    }
+                }
+
+                // Check Attached Parent Building chain
+                if (EntityManager.HasComponent<Game.Objects.Attached>(targetEnt))
+                {
+                    Entity parent = EntityManager.GetComponentData<Game.Objects.Attached>(targetEnt).m_Parent;
+                    int depth = 0;
+                    while (parent != Entity.Null && depth < 5)
+                    {
+                        depth++;
+                        if (EntityManager.HasComponent<Game.Buildings.Building>(parent))
+                            return parent;
+                        if (EntityManager.HasComponent<Game.Objects.Attached>(parent))
+                            parent = EntityManager.GetComponentData<Game.Objects.Attached>(parent).m_Parent;
+                        else if (EntityManager.HasComponent<Game.Common.Owner>(parent))
+                            parent = EntityManager.GetComponentData<Game.Common.Owner>(parent).m_Owner;
+                        else
+                            break;
+                    }
+                }
+            }
+
+            return Entity.Null;
         }
 
         private string GetStopResolvedName(Entity wp, Entity stopTarget, Game.UI.NameSystem nameSystem, int stopIndexCounter)

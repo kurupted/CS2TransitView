@@ -6,6 +6,7 @@ export interface ConnectingLineData {
     id: number;
     name: string;
     color: string;
+    type?: TransitType;
 }
 
 export interface TransitStopData {
@@ -14,6 +15,7 @@ export interface TransitStopData {
     waiting: number;
     waitTime: number;
     connectingLines?: ConnectingLineData[];
+    nearbyLines?: ConnectingLineData[];
 }
 
 export interface TransitLine {
