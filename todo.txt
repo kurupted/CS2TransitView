@@ -2,7 +2,4 @@
 
 esc to close, if last open screen
 
-new screenshots
-
-
-- show day/night route icons
+show day/night route icons

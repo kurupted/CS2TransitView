@@ -320,7 +320,7 @@ export const TransitPanel = () => {
         return Array.from(map.values())
             .filter(s => s.totalWaiting > 0 || s.lines.length > 0)
             .sort((a, b) => b.totalWaiting - a.totalWaiting || b.maxWaitTime - a.maxWaitTime)
-            .slice(0, 12);
+            .slice(0, 15);
     }, [lines]);
 
     const scrollLineIntoView = React.useCallback((targetLineId: number) => {
@@ -699,7 +699,7 @@ export const TransitPanel = () => {
                     {isBusiestMode ? (
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                             <div style={{ padding: '8rem 15rem', color: '#aaa', fontSize: '13rem', borderBottom: '1rem solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontWeight: 'bold', color: '#fff' }}>Top 12 Crowded Stops</span>
+                                <span style={{ fontWeight: 'bold', color: '#fff' }}> </span>
                                 <span style={{ fontSize: '11rem', color: '#888' }}>Ranked by waiting passengers</span>
                             </div>
 
