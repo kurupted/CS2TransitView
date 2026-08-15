@@ -1,4 +1,3 @@
-- You can now expand transit lines to view their stops. Each stop will show connecting lines, as well as nearby stops of any type.
+- You can now expand transit lines to view their stops. Each stop will show connecting lines, nearby stops of any type, and waiting passenger info.
 - Added Busiest Stops list (click the hourglass icon).
-- Fixed scrolling when jumping to a transit line.
-- Updated subway icons to better differentiate from trains.
+- Fixed picker tool not scrolling to the identified transit line.

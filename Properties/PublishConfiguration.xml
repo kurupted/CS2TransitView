@@ -63,9 +63,9 @@ This mod is safe to remove and doesn't add data to your save files.
 
     <!-- Change log.  Copied from ChangeLog.md file.  Supports minimal markdown subset. -->
     <ChangeLog>
-- You can now expand transit lines to view their stops.
+- You can now expand transit lines to view their stops. Each stop will show connecting lines, nearby stops of any type, and waiting passenger info.
 - Added Busiest Stops list (click the hourglass icon).
-- Fixed scrolling when jumping to a transit line.
+- Fixed picker tool not scrolling to the identified transit line.
 </ChangeLog>
 
     <!-- External links.  Can be set multiple times. -->

@@ -13,7 +13,7 @@ const showTransitVehicles$ = bindValue<boolean>("BetterTransitView", "showTransi
 const selectedTransitLine$ = bindValue<number>("BetterTransitView", "selectedTransitLine", 0);
 const isMapPickerActive$ = bindValue<boolean>("BetterTransitView", "isMapPickerActive", false);
 
-const VehicleIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z" /></svg>));
+const VehicleIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M20 7H4c-1.1 0-2 .9-2 2v7c0 .55.45 1 1 1h1.18c.41 1.16 1.52 2 2.82 2s2.41-.84 2.82-2h4.36c.41 1.16 1.52 2 2.82 2s2.41-.84 2.82-2H21c.55 0 1-.45 1-1v-6c0-1.66-1.34-3-3-3zM7 17.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm10 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM4 12V9h4v3H4zm6 0V9h4v3h-4zm6 0V9h3.5c.83 0 1.5.67 1.5 1.5V12H16z" /></svg>));
 const DispatchIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '13rem', height: '13rem', marginLeft: '3rem' }} fill="none" stroke="#ffd700" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>));
 const WarningIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '13rem', height: '13rem', marginLeft: '3rem' }} fill="none" stroke="#ff4d4d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>));
 const PassengerIcon = memo(() => (<svg viewBox="0 0 24 24" style={{ width: '14rem', height: '14rem' }} fill="#bbb"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>));
@@ -58,11 +58,11 @@ const PeopleIcon = memo(() => (
 ));
 
 const BusIcon = memo(() => (
-    <svg viewBox="0 0 24 24" style={{ width: '16rem', height: '16rem' }} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-        <path d="M6 17v4a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2v-4"></path>
-        <path d="M14 17v4a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2v-4"></path>
-        <path d="M8 9h8"></path>
+    <svg viewBox="0 0 24 24" style={{ width: '16rem', height: '16rem' }} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 7H4c-1.1 0-2 .9-2 2v7a1 1 0 0 0 1 1h1.2a3 3 0 0 0 5.6 0h4.4a3 3 0 0 0 5.6 0H21a1 1 0 0 0 1-1v-6c0-1.7-1.3-3-3-3z" />
+        <circle cx="7" cy="17" r="1.5" />
+        <circle cx="17" cy="17" r="1.5" />
+        <path d="M4 12V9h4v3H4zm6 0V9h4v3h-4zm6 0V9h3.5a1.5 1.5 0 0 1 1.5 1.5V12H16z" />
     </svg>
 ));
 
@@ -115,7 +115,6 @@ const TransportTypeIcon = memo(({ type, style, noCircle }: { type: TransitType, 
     let path = "";
     switch (type) {
         case 'train':
-        case 'subway':
             path = "M12 2c-4 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-4-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm4 0h-2V6h2v4zm2.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z";
             break;
         case 'ship':
@@ -126,8 +125,10 @@ const TransportTypeIcon = memo(({ type, style, noCircle }: { type: TransitType, 
             path = "M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z";
             break;
         case 'bus':
+            path = "M20 7H4c-1.1 0-2 .9-2 2v7c0 .55.45 1 1 1h1.18c.41 1.16 1.52 2 2.82 2s2.41-.84 2.82-2h4.36c.41 1.16 1.52 2 2.82 2s2.41-.84 2.82-2H21c.55 0 1-.45 1-1v-6c0-1.66-1.34-3-3-3zM7 17.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm10 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM4 12V9h4v3H4zm6 0V9h4v3h-4zm6 0V9h3.5c.83 0 1.5.67 1.5 1.5V12H16z";
+            break;
         case 'tram':
-            path = "M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z";
+            path = "M19 16.5V10c0-2.21-1.79-4-4-4h-1.5l1.62-2.16L13.88 3 12 5.5 10.12 3 8.88 3.84 10.5 6H9c-2.21 0-4 1.79-4 4v6.5C5 17.88 6.12 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.38 0 2.5-1.12 2.5-2.5zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm4.5-6H7V8h5v3zm5 6c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm0-6h-4V8h4v3z";
             break;
         default:
             path = "M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15 6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zM19 15.91v-6.7l-6 3.37v6.71l6-3.38z"; // Cargo Box
@@ -287,7 +288,7 @@ export const TransitPanel = () => {
         }>();
 
         lines.forEach(line => {
-            if (!line.stopList) return;
+            if (line.cargo || !line.stopList) return;
             line.stopList.forEach(stop => {
                 const key = (stop as any).targetId || stop.id;
                 let entry = map.get(key);
@@ -942,7 +943,7 @@ export const TransitPanel = () => {
 
                                                     {/* Type Icon is dynamically added in Cargo or Busiest Tab */}
                                                     {(activeTab === 'cargo' || activeTab === 'busiest') && (
-                                                        <div style={{ marginRight: '10rem', display: 'flex', alignItems: 'center' }} title={`Type: ${line.type}`}>
+                                                        <div style={{ marginRight: '8rem', display: 'flex', alignItems: 'center' }} title={`Type: ${line.type}`}>
                                                             <TransportTypeIcon type={line.type} />
                                                         </div>
                                                     )}
@@ -997,16 +998,16 @@ export const TransitPanel = () => {
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '78rem' }} title="Length">
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: line.cargo ? '74rem' : '78rem' }} title="Length">
                                                                         <LengthIcon /> <span style={{ marginLeft: '3rem' }}>{line.length}</span>
                                                                     </span>
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '55rem' }} title="Stops">
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: line.cargo ? '50rem' : '55rem' }} title="Stops">
                                                                         <StopIcon /> <span style={{ marginLeft: '3rem' }}>{line.stops || 0}</span>
                                                                     </span>
 
                                                                     <span style={{
-                                                                        display: 'flex', alignItems: 'center', width: '65rem',
+                                                                        display: 'flex', alignItems: 'center', width: line.cargo ? '60rem' : '65rem',
                                                                         color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
                                                                         fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
                                                                     }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
@@ -1017,7 +1018,7 @@ export const TransitPanel = () => {
                                                                     </span>
 
                                                                     {line.cargo ? (
-                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '70rem' }} title="Cargo Transported">
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '66rem' }} title="Cargo Transported">
                                                                             <CargoIcon /> <span style={{ marginLeft: '3rem' }}>{((line.passengers || 0) / 1000).toFixed(0)} t</span>
                                                                         </span>
                                                                     ) : (
@@ -1026,7 +1027,7 @@ export const TransitPanel = () => {
                                                                         </span>
                                                                     )}
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '55rem' }} title="Usage">
+                                                                    <span style={{ display: 'flex', alignItems: 'center', width: line.cargo ? '50rem' : '55rem' }} title="Usage">
                                                                         <UsageIcon /> <span style={{ marginLeft: '3rem' }}>{line.usage}%</span>
                                                                     </span>
                                                                 </>
@@ -1168,13 +1169,17 @@ export const TransitPanel = () => {
                                                                         )}
                                                                     </div>
                                                                     <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: 'auto', paddingLeft: '10rem' }}>
-                                                                        <span style={{ display: 'flex', alignItems: 'center', marginRight: '14rem', color: stop.waiting > 0 ? '#ffffff' : '#888', fontWeight: stop.waiting > 0 ? '600' : 'normal', fontSize: '12rem' }} title="Passengers Waiting">
-                                                                            <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waiting}</span>
-                                                                        </span>
-                                                                        {stop.waitTime > 0 && (
-                                                                            <span style={{ display: 'flex', alignItems: 'center', color: '#aaa', fontSize: '12rem' }} title="Average Wait Time">
-                                                                                <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waitTime}m</span>
-                                                                            </span>
+                                                                        {!line.cargo && (
+                                                                            <>
+                                                                                <span style={{ display: 'flex', alignItems: 'center', marginRight: '14rem', color: stop.waiting > 0 ? '#ffffff' : '#888', fontWeight: stop.waiting > 0 ? '600' : 'normal', fontSize: '12rem' }} title="Passengers Waiting">
+                                                                                    <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waiting}</span>
+                                                                                </span>
+                                                                                {stop.waitTime > 0 && (
+                                                                                    <span style={{ display: 'flex', alignItems: 'center', color: '#aaa', fontSize: '12rem' }} title="Average Wait Time">
+                                                                                        <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waitTime}m</span>
+                                                                                    </span>
+                                                                                )}
+                                                                            </>
                                                                         )}
                                                                     </div>
                                                                 </div>

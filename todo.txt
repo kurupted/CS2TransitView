@@ -1,12 +1,8 @@
 ﻿
-train/bus icons
-padidng for vehicles, length
 
 esc to close, if last open screen
 
 new screenshots
-
-show nearby lines of any transit type (exclude from the same line). show as colored icons (line color w type icon)
 
 
 - show day/night route icons
