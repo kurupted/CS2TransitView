@@ -655,45 +655,56 @@ export const TransitPanel = () => {
                         <h2 style={{ margin: 0, fontSize: '16rem', fontWeight: 'bold' }}>{isBusiestMode ? "Crowded Stops" : "Transit View"}</h2>
                         <div style={{ display: 'flex', alignItems: 'center' }} id="divtopToggles">
                             {/* Hourglass Toggle for Busiest / Crowded Mode */}
-                            <div
-                                onClick={() => setIsBusiestMode(!isBusiestMode)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                                    color: isBusiestMode ? '#fff' : '#aaa',
-                                    backgroundColor: isBusiestMode ? '#4287f5' : 'rgba(255,255,255,0.1)',
-                                    padding: '4rem', marginRight: '8rem', borderRadius: '4rem', transition: 'all 0.2s'
-                                }}
-                                title="Toggle Crowded Stops View"
-                            >
-                                <HourglassIcon />
-                            </div>
+                            <Tooltip tooltip={isBusiestMode ? "Switch to Line List View" : "View Crowded Stops"}>
+                                <div
+                                    onClick={() => setIsBusiestMode(!isBusiestMode)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                        color: isBusiestMode ? '#fff' : '#aaa',
+                                        backgroundColor: isBusiestMode ? '#4287f5' : 'rgba(255,255,255,0.1)',
+                                        padding: '4rem', marginRight: '8rem', borderRadius: '4rem', transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <HourglassIcon />
+                                </div>
+                            </Tooltip>
 
                             {/* Gray Map Toggle */}
-                            <div onClick={() => trigger("BetterTransitView", "setShowInfoviewBackground", !showInfoviewBackground)} style={{ display: 'flex', alignItems: 'center', fontSize: '11rem', cursor: 'pointer', color: showInfoviewBackground ? '#fff' : '#aaa', backgroundColor: showInfoviewBackground ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem', borderRadius: '4rem', transition: 'all 0.2s', fontWeight: showInfoviewBackground ? 'bold' : 'normal' }} title="Toggle Gray Map">
-                                Map
-                            </div>
+                            <Tooltip tooltip={showInfoviewBackground ? "Turn Off Gray Map" : "Turn On Gray Map"}>
+                                <div onClick={() => trigger("BetterTransitView", "setShowInfoviewBackground", !showInfoviewBackground)} style={{ display: 'flex', alignItems: 'center', fontSize: '11rem', cursor: 'pointer', color: showInfoviewBackground ? '#fff' : '#aaa', backgroundColor: showInfoviewBackground ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem', borderRadius: '4rem', transition: 'all 0.2s', fontWeight: showInfoviewBackground ? 'bold' : 'normal' }}>
+                                    Map
+                                </div>
+                            </Tooltip>
 
                             {/* Separator */}
                             <div style={{ width: '1px', height: '16rem', backgroundColor: 'rgba(255,255,255,0.1)', marginLeft: '6rem', marginRight: '5rem' }} />
 
                             {/* Vehicles Toggle */}
-                            <div onClick={() => trigger("BetterTransitView", "setShowTransitVehicles", !showTransitVehicles)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showTransitVehicles ? '#fff' : '#aaa', backgroundColor: showTransitVehicles ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem 5rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Vehicles Overlay">
-                                <BusIcon />
-                            </div>
+                            <Tooltip tooltip={showTransitVehicles ? "Hide Vehicles on Map" : "Show Vehicles on Map"}>
+                                <div onClick={() => trigger("BetterTransitView", "setShowTransitVehicles", !showTransitVehicles)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showTransitVehicles ? '#fff' : '#aaa', backgroundColor: showTransitVehicles ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem 5rem', borderRadius: '4rem', transition: 'all 0.2s' }}>
+                                    <BusIcon />
+                                </div>
+                            </Tooltip>
 
                             {/* People Icon Toggle (MOVED BACK NEXT TO BUS ICON) */}
-                            <div onClick={() => trigger("BetterTransitView", "setShowWaitingPassengers", !showWaitingPassengers)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showWaitingPassengers ? '#fff' : '#aaa', backgroundColor: showWaitingPassengers ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem 5rem', marginLeft: '3rem', borderRadius: '4rem', transition: 'all 0.2s' }} title="Show Waiting Passengers Overlay">
-                                <PeopleIcon />
-                            </div>
+                            <Tooltip tooltip={showWaitingPassengers ? "Hide Waiting Passengers on Map" : "Show Waiting Passengers on Map"}>
+                                <div onClick={() => trigger("BetterTransitView", "setShowWaitingPassengers", !showWaitingPassengers)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showWaitingPassengers ? '#fff' : '#aaa', backgroundColor: showWaitingPassengers ? '#4287f5' : 'rgba(255,255,255,0.1)', padding: '4rem 5rem', marginLeft: '3rem', borderRadius: '4rem', transition: 'all 0.2s' }}>
+                                    <PeopleIcon />
+                                </div>
+                            </Tooltip>
 
                             {/* Toggle All Button */}
-                            <button onClick={toggleMasterAll} style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: '1rem solid rgba(255,255,255,0.3)', color: 'white', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', fontSize: '11rem', textTransform: 'uppercase', marginLeft: '25rem' }}>
-                                Toggle All
-                            </button>
+                            <Tooltip tooltip="Toggle visibility of all transit lines">
+                                <button onClick={toggleMasterAll} style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: '1rem solid rgba(255,255,255,0.3)', color: 'white', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', fontSize: '11rem', textTransform: 'uppercase', marginLeft: '25rem' }}>
+                                    Toggle All
+                                </button>
+                            </Tooltip>
 
-                            <button onClick={() => trigger("BetterTransitView", "toggleTransitCustom", false)} style={{ backgroundColor: ' rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', marginLeft: '15rem', padding: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <CloseIcon />
-                            </button>
+                            <Tooltip tooltip="Close">
+                                <button onClick={() => trigger("BetterTransitView", "toggleTransitCustom", false)} style={{ backgroundColor: ' rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', marginLeft: '15rem', padding: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <CloseIcon />
+                                </button>
+                            </Tooltip>
                         </div>
                     </div>
                     {isBusiestMode ? (
@@ -725,31 +736,34 @@ export const TransitPanel = () => {
                                         >
                                             {/* Stop Header */}
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8rem' }}>
-                                                <div
-                                                    onClick={() => trigger("BetterTransitView", "showVanillaLineInfo", stop.id)}
-                                                    title="Click to jump to stop location on map"
-                                                    style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', minWidth: 0, flex: 1, marginRight: '10rem' }}
-                                                >
-                                                    {(() => {
-                                                        const types = Array.from(new Set(stop.lines.map(l => l.type).filter(Boolean))) as TransitType[];
-                                                        const displayTypes = types.length > 0 ? types : ['bus' as TransitType];
-                                                        return (
-                                                            <div style={{ marginRight: '8rem', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                                                                {displayTypes.map(t => (
-                                                                    <span key={t} style={{ marginRight: '4rem', display: 'flex', alignItems: 'center' }} title={`Type: ${t}`}>
-                                                                        <TransportTypeIcon type={t} />
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        );
-                                                    })()}
-                                                    <span style={{ fontWeight: 'bold', fontSize: '15rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {stop.name}
-                                                    </span>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', color: '#fff', fontWeight: 'bold', fontSize: '13rem', flexShrink: 0 }} title="Total Passengers Waiting at Stop">
-                                                    <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{stop.totalWaiting}</span>
-                                                </div>
+                                                <Tooltip tooltip="Click to jump to stop location on map">
+                                                    <div
+                                                        onClick={() => trigger("BetterTransitView", "showVanillaLineInfo", stop.id)}
+                                                        style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', minWidth: 0, flex: 1, marginRight: '10rem' }}
+                                                    >
+                                                        {(() => {
+                                                            const types = Array.from(new Set(stop.lines.map(l => l.type).filter(Boolean))) as TransitType[];
+                                                            const displayTypes = types.length > 0 ? types : ['bus' as TransitType];
+                                                            return (
+                                                                <div style={{ marginRight: '8rem', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                                                                    {displayTypes.map(t => (
+                                                                        <span key={t} style={{ marginRight: '4rem', display: 'flex', alignItems: 'center' }}>
+                                                                            <TransportTypeIcon type={t} />
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                        <span style={{ fontWeight: 'bold', fontSize: '15rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {stop.name}
+                                                        </span>
+                                                    </div>
+                                                </Tooltip>
+                                                <Tooltip tooltip="Total Passengers Waiting at Stop">
+                                                    <div style={{ display: 'flex', alignItems: 'center', color: '#fff', fontWeight: 'bold', fontSize: '13rem', flexShrink: 0 }}>
+                                                        <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{stop.totalWaiting}</span>
+                                                    </div>
+                                                </Tooltip>
                                             </div>
 
                                             {/* Connected Lines List */}
@@ -758,7 +772,6 @@ export const TransitPanel = () => {
                                                     <div
                                                         key={line.id || lIdx}
                                                         onClick={() => handleJumpToLineAndStop(line.id, line.type, stop.id)}
-                                                        title="Click to switch to this line & jump to stop"
                                                         style={{
                                                             display: 'flex',
                                                             alignItems: 'center',
@@ -795,13 +808,17 @@ export const TransitPanel = () => {
                                                         </div>
 
                                                         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                                                            <span style={{ display: 'flex', alignItems: 'center', marginRight: '14rem', color: line.waiting > 0 ? '#ffffff' : '#888', fontWeight: line.waiting > 0 ? '600' : 'normal', fontSize: '11rem' }} title="Passengers Waiting on this Line">
-                                                                <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{line.waiting}</span>
-                                                            </span>
-                                                            {line.waitTime > 0 && (
-                                                                <span style={{ display: 'flex', alignItems: 'center', marginRight: '10rem', color: '#aaa', fontSize: '11rem' }} title="Average Wait Time on this Line">
-                                                                    <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{line.waitTime}m</span>
+                                                            <Tooltip tooltip="Passengers Waiting on this Line">
+                                                                <span style={{ display: 'flex', alignItems: 'center', marginRight: '14rem', color: line.waiting > 0 ? '#ffffff' : '#888', fontWeight: line.waiting > 0 ? '600' : 'normal', fontSize: '11rem' }}>
+                                                                    <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{line.waiting}</span>
                                                                 </span>
+                                                            </Tooltip>
+                                                            {line.waitTime > 0 && (
+                                                                <Tooltip tooltip="Average Wait Time on this Line">
+                                                                    <span style={{ display: 'flex', alignItems: 'center', marginRight: '10rem', color: '#aaa', fontSize: '11rem' }}>
+                                                                        <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{line.waitTime}m</span>
+                                                                    </span>
+                                                                </Tooltip>
                                                             )}
                                                         </div>
                                                     </div>
@@ -875,35 +892,41 @@ export const TransitPanel = () => {
                                             options={sortOptions.map(opt => ({ value: opt, label: sortLabels[opt] }))}
                                             onChange={(val) => setSortField(val as SortField)}
                                         />
-                                        <button onClick={() => setSortDesc(!sortDesc)} style={{ background: 'rgba(255,255,255,0.05)', border: '1rem solid rgba(255,255,255,0.1)', borderRadius: '4rem', color: '#fff', cursor: 'pointer', padding: '4rem 8rem', marginLeft: '1rem', fontSize: '12rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            {sortDesc ? 'DESC ↓' : 'ASC ↑'}
-                                        </button>
+                                        <Tooltip tooltip={sortDesc ? "Descending Order" : "Ascending Order"}>
+                                            <button onClick={() => setSortDesc(!sortDesc)} style={{ background: 'rgba(255,255,255,0.05)', border: '1rem solid rgba(255,255,255,0.1)', borderRadius: '4rem', color: '#fff', cursor: 'pointer', padding: '4rem 8rem', marginLeft: '1rem', fontSize: '12rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {sortDesc ? 'DESC ↓' : 'ASC ↑'}
+                                            </button>
+                                        </Tooltip>
                                     </div>
 
                                     {/* TOOL BUTTON */}
-                                    <button
-                                        onClick={() => trigger("BetterTransitView", "activateTransitTool", activeTab === 'busiest' ? 'bus' : activeTab)}
-                                        style={{ marginLeft: '15rem', backgroundColor: '#4287f5', border: 'none', borderRadius: '4rem', color: 'white', padding: '4rem 10rem', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '12rem', fontWeight: 'bold' }}
-                                        title={`Equip ${activeTab === 'busiest' ? 'bus' : activeTab} tool`}
-                                    >
-                                        <ToolIcon /> &nbsp;Tool
-                                    </button>
+                                    <Tooltip tooltip={`Equip ${activeTab === 'busiest' ? 'bus' : activeTab} tool`}>
+                                        <button
+                                            onClick={() => trigger("BetterTransitView", "activateTransitTool", activeTab === 'busiest' ? 'bus' : activeTab)}
+                                            style={{ marginLeft: '15rem', backgroundColor: '#4287f5', border: 'none', borderRadius: '4rem', color: 'white', padding: '4rem 10rem', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '12rem', fontWeight: 'bold' }}
+                                        >
+                                            <ToolIcon /> &nbsp;Tool
+                                        </button>
+                                    </Tooltip>
 
                                     {/* PICKER BUTTON */}
-                                    <button
-                                        onClick={() => {
-                                            trigger("BetterTransitView", "toggleMapPicker", !isPickerMode);
-                                        }}
-                                        style={{ marginLeft: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', backgroundColor: isPickerMode ? 'rgba(255, 0, 0, 0.5)' : 'rgba(255,255,255,0.05)', color: isPickerMode ? 'white' : '#aaa', border: '1rem solid rgba(255,255,255,0.1)' }}
-                                        title="Pick a line on the map"
-                                    >
-                                        <CrosshairIcon />
-                                    </button>
+                                    <Tooltip tooltip={isPickerMode ? "Cancel line picker" : "Pick a line on the map"}>
+                                        <button
+                                            onClick={() => {
+                                                trigger("BetterTransitView", "toggleMapPicker", !isPickerMode);
+                                            }}
+                                            style={{ marginLeft: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem 8rem', borderRadius: '4rem', cursor: 'pointer', backgroundColor: isPickerMode ? 'rgba(255, 0, 0, 0.5)' : 'rgba(255,255,255,0.05)', color: isPickerMode ? 'white' : '#aaa', border: '1rem solid rgba(255,255,255,0.1)' }}
+                                        >
+                                            <CrosshairIcon />
+                                        </button>
+                                    </Tooltip>
 
                                 </div>
-                                <div onClick={toggleTabAll} style={{ display: 'flex', alignItems: 'center', fontSize: '13rem', cursor: 'pointer', color: '#fff' }}>
-                                    Toggle Tab <CustomCheckbox checked={allVisibleInTab} onChange={() => { }} />
-                                </div>
+                                <Tooltip tooltip="Toggle visibility of all lines in this tab">
+                                    <div onClick={toggleTabAll} style={{ display: 'flex', alignItems: 'center', fontSize: '13rem', cursor: 'pointer', color: '#fff' }}>
+                                        Toggle Tab <CustomCheckbox checked={allVisibleInTab} onChange={() => { }} />
+                                    </div>
+                                </Tooltip>
                             </div>
 
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -921,31 +944,34 @@ export const TransitPanel = () => {
                                                 <div id={`transit-line-${line.id}`} onClick={() => toggleLine(line.id)} style={{ display: 'flex', alignItems: 'center', padding: '10rem', marginBottom: isExpanded ? '0' : '8rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: isExpanded ? '6rem 6rem 0 0' : '6rem', borderLeft: `4rem solid ${line.color}`, cursor: 'pointer' }}>
 
                                                     {/* Expand Arrow Button */}
-                                                    <div
-                                                        onClick={(e) => toggleExpand(line.id, e)}
-                                                        style={{
-                                                            marginRight: '6rem',
-                                                            padding: '4rem',
-                                                            cursor: 'pointer',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            color: '#aaa',
-                                                            borderRadius: '4rem',
-                                                            transition: 'all 0.15s ease'
-                                                        }}
-                                                        onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
-                                                        onMouseLeave={(e) => e.currentTarget.style.color = '#aaa'}
-                                                        title="Expand Stops"
-                                                    >
-                                                        {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
-                                                    </div>
+                                                    <Tooltip tooltip={isExpanded ? "Collapse Stops" : "Expand Stops"}>
+                                                        <div
+                                                            onClick={(e) => toggleExpand(line.id, e)}
+                                                            style={{
+                                                                marginRight: '6rem',
+                                                                padding: '4rem',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                color: '#aaa',
+                                                                borderRadius: '4rem',
+                                                                transition: 'all 0.15s ease'
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.color = '#aaa'}
+                                                        >
+                                                            {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                                                        </div>
+                                                    </Tooltip>
 
                                                     {/* Type Icon is dynamically added in Cargo or Busiest Tab */}
                                                     {(activeTab === 'cargo' || activeTab === 'busiest') && (
-                                                        <div style={{ marginRight: '8rem', display: 'flex', alignItems: 'center' }} title={`Type: ${line.type}`}>
-                                                            <TransportTypeIcon type={line.type} />
-                                                        </div>
+                                                        <Tooltip tooltip={`Type: ${line.type}`}>
+                                                            <div style={{ marginRight: '8rem', display: 'flex', alignItems: 'center' }}>
+                                                                <TransportTypeIcon type={line.type} />
+                                                            </div>
+                                                        </Tooltip>
                                                     )}
 
                                                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
@@ -953,18 +979,19 @@ export const TransitPanel = () => {
                                                             <span style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                                                                 {line.name} &nbsp;
                                                             </span>
-                                                            <div
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    trigger("BetterTransitView", "showVanillaLineInfo", line.id);
-                                                                }}
-                                                                title="Inspect Route"
-                                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', borderRadius: '4rem', transition: 'background-color 0.1s', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.05)' }}
-                                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
-                                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
-                                                            >
-                                                                <SearchIcon />
-                                                            </div>
+                                                            <Tooltip tooltip="Inspect Line">
+                                                                <div
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        trigger("BetterTransitView", "showVanillaLineInfo", line.id);
+                                                                    }}
+                                                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', borderRadius: '4rem', transition: 'background-color 0.1s', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.05)' }}
+                                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                                                                >
+                                                                    <SearchIcon />
+                                                                </div>
+                                                            </Tooltip>
                                                         </div>
 
 
@@ -973,71 +1000,93 @@ export const TransitPanel = () => {
                                                             {/* Prominent Passengers Waiting & Avg Wait Time in Busiest Mode */}
                                                             {isBusiestMode ? (
                                                                 <>
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '62rem', color: (line.waitingPassengers || 0) > 0 ? '#ffffff' : '#bbb', fontWeight: (line.waitingPassengers || 0) > 0 ? 'bold' : 'normal' }} title="Waiting Passengers">
-                                                                        <PassengerIcon /> <span style={{ marginLeft: '3rem' }}>{line.waitingPassengers || 0}</span>
-                                                                    </span>
+                                                                    <Tooltip tooltip="Waiting Passengers">
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '62rem', color: (line.waitingPassengers || 0) > 0 ? '#ffffff' : '#bbb', fontWeight: (line.waitingPassengers || 0) > 0 ? 'bold' : 'normal' }}>
+                                                                            <PassengerIcon /> <span style={{ marginLeft: '3rem' }}>{line.waitingPassengers || 0}</span>
+                                                                        </span>
+                                                                    </Tooltip>
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '62rem', color: '#bbb' }} title="Average Wait Time">
-                                                                        <WaitTimeIcon /> <span style={{ marginLeft: '3rem' }}>{line.avgWaitTime || 0}m</span>
-                                                                    </span>
+                                                                    <Tooltip tooltip="Average Wait Time">
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '62rem', color: '#bbb' }}>
+                                                                            <WaitTimeIcon /> <span style={{ marginLeft: '3rem' }}>{line.avgWaitTime || 0}m</span>
+                                                                        </span>
+                                                                    </Tooltip>
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: '52rem' }} title="Stops">
-                                                                        <StopIcon /> <span style={{ marginLeft: '3rem' }}>{line.stops || 0}</span>
-                                                                    </span>
+                                                                    <Tooltip tooltip="Stops">
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '52rem' }}>
+                                                                            <StopIcon /> <span style={{ marginLeft: '3rem' }}>{line.stops || 0}</span>
+                                                                        </span>
+                                                                    </Tooltip>
 
-                                                                    <span style={{
-                                                                        display: 'flex', alignItems: 'center', width: '55rem',
-                                                                        color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
-                                                                        fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
-                                                                    }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
-                                                                    >
-                                                                        <VehicleIcon /> <span style={{ marginLeft: '3rem' }}>{line.vehicles}</span>
+                                                                    <Tooltip tooltip={line.hasShortage ? "Vehicle Shortage: Not enough vehicles available from depot" : (line.isDispatching ? "Vehicle(s) on the way from depot" : "Active Vehicles")}>
+                                                                        <span style={{
+                                                                            display: 'flex', alignItems: 'center', width: '55rem',
+                                                                            color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
+                                                                            fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
+                                                                        }}
+                                                                        >
+                                                                            <VehicleIcon /> <span style={{ marginLeft: '3rem' }}>{line.vehicles}</span>
 
-                                                                        {line.hasShortage ? <span style={{ marginLeft: '3rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
-                                                                    </span>
+                                                                            {line.hasShortage ? <span style={{ marginLeft: '3rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
+                                                                        </span>
+                                                                    </Tooltip>
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: line.cargo ? '74rem' : '78rem' }} title="Length">
-                                                                        <LengthIcon /> <span style={{ marginLeft: '3rem' }}>{line.length}</span>
-                                                                    </span>
+                                                                    <Tooltip tooltip="Distance">
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: line.cargo ? '74rem' : '78rem' }}>
+                                                                            <LengthIcon /> <span style={{ marginLeft: '3rem' }}>{line.length}</span>
+                                                                        </span>
+                                                                    </Tooltip>
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: line.cargo ? '50rem' : '55rem' }} title="Stops">
-                                                                        <StopIcon /> <span style={{ marginLeft: '3rem' }}>{line.stops || 0}</span>
-                                                                    </span>
+                                                                    <Tooltip tooltip="Stops">
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: line.cargo ? '50rem' : '55rem' }}>
+                                                                            <StopIcon /> <span style={{ marginLeft: '3rem' }}>{line.stops || 0}</span>
+                                                                        </span>
+                                                                    </Tooltip>
 
-                                                                    <span style={{
-                                                                        display: 'flex', alignItems: 'center', width: line.cargo ? '60rem' : '65rem',
-                                                                        color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
-                                                                        fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
-                                                                    }} title={line.hasShortage ? "Not enough vehicles available from the depot" : (line.isDispatching ? "Vehicle(s) on the way from the depot" : "")}
-                                                                    >
-                                                                        <VehicleIcon /> <span style={{ marginLeft: '3rem' }}>{line.vehicles}</span>
+                                                                    <Tooltip tooltip={line.hasShortage ? "Vehicle Shortage: Not enough vehicles available from depot" : (line.isDispatching ? "Vehicle(s) on the way from depot" : "Active Vehicles")}>
+                                                                        <span style={{
+                                                                            display: 'flex', alignItems: 'center', width: line.cargo ? '60rem' : '65rem',
+                                                                            color: line.hasShortage ? '#ff4d4d' : (line.isDispatching ? '#ffd700' : '#bbb'),
+                                                                            fontWeight: line.hasShortage || line.isDispatching ? 'bold' : 'normal'
+                                                                        }}
+                                                                        >
+                                                                            <VehicleIcon /> <span style={{ marginLeft: '3rem' }}>{line.vehicles}</span>
 
-                                                                        {line.hasShortage ? <span style={{ marginLeft: '3rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
-                                                                    </span>
+                                                                            {line.hasShortage ? <span style={{ marginLeft: '3rem' }}><WarningIcon /></span> : (line.isDispatching ? <span style={{ marginLeft: '3rem' }}><DispatchIcon /></span> : null)}
+                                                                        </span>
+                                                                    </Tooltip>
 
                                                                     {line.cargo ? (
-                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '66rem' }} title="Cargo Transported">
-                                                                            <CargoIcon /> <span style={{ marginLeft: '3rem' }}>{((line.passengers || 0) / 1000).toFixed(0)} t</span>
-                                                                        </span>
+                                                                        <Tooltip tooltip="Cargo Transported">
+                                                                            <span style={{ display: 'flex', alignItems: 'center', width: '66rem' }}>
+                                                                                <CargoIcon /> <span style={{ marginLeft: '3rem' }}>{((line.passengers || 0) / 1000).toFixed(0)} t</span>
+                                                                            </span>
+                                                                        </Tooltip>
                                                                     ) : (
-                                                                        <span style={{ display: 'flex', alignItems: 'center', width: '70rem' }} title="Passengers">
-                                                                            <PassengerIcon /> <span style={{ marginLeft: '3rem' }}>{line.passengers || 0}</span>
-                                                                        </span>
+                                                                        <Tooltip tooltip="Passengers Transported">
+                                                                            <span style={{ display: 'flex', alignItems: 'center', width: '70rem' }}>
+                                                                                <PassengerIcon /> <span style={{ marginLeft: '3rem' }}>{line.passengers || 0}</span>
+                                                                            </span>
+                                                                        </Tooltip>
                                                                     )}
 
-                                                                    <span style={{ display: 'flex', alignItems: 'center', width: line.cargo ? '50rem' : '55rem' }} title="Usage">
-                                                                        <UsageIcon /> <span style={{ marginLeft: '3rem' }}>{line.usage}%</span>
-                                                                    </span>
+                                                                    <Tooltip tooltip="Line Usage">
+                                                                        <span style={{ display: 'flex', alignItems: 'center', width: line.cargo ? '50rem' : '55rem' }}>
+                                                                            <UsageIcon /> <span style={{ marginLeft: '3rem' }}>{line.usage}%</span>
+                                                                        </span>
+                                                                    </Tooltip>
                                                                 </>
                                                             )}
                                                         </div>
                                                     </div>
 
-                                                    <div style={{ marginLeft: '15rem', flexShrink: 0 }}>
-                                                        <CustomCheckbox checked={activeLines.has(line.id)} onChange={() => { }} />
-                                                    </div>
+                                                    <Tooltip tooltip="Toggle line visibility">
+                                                        <div style={{ marginLeft: '15rem', flexShrink: 0 }}>
+                                                            <CustomCheckbox checked={activeLines.has(line.id)} onChange={() => { }} />
+                                                        </div>
+                                                    </Tooltip>
                                                 </div>
 
                                                 {/* Expanded Stops List */}
@@ -1053,7 +1102,6 @@ export const TransitPanel = () => {
                                                                         e.stopPropagation();
                                                                         trigger("BetterTransitView", "showVanillaLineInfo", stop.id);
                                                                     }}
-                                                                    title="Click to jump to stop location"
                                                                     style={{
                                                                         display: 'flex',
                                                                         alignItems: 'center',
@@ -1068,11 +1116,12 @@ export const TransitPanel = () => {
                                                                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                                                 >
                                                                     <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1, marginRight: '12rem', overflow: 'hidden' }}>
-                                                                        <div style={{ marginRight: '6rem', display: 'flex', alignItems: 'center', opacity: 0.8, flexShrink: 0 }}>
-                                                                            <StopIcon />
-                                                                        </div>
+                                                                        <Tooltip tooltip="Jump to stop location on map">
+                                                                            <div style={{ marginRight: '6rem', display: 'flex', alignItems: 'center', opacity: 0.8, flexShrink: 0 }}>
+                                                                                <StopIcon />
+                                                                            </div>
+                                                                        </Tooltip>
                                                                         <span
-                                                                            title={stop.name}
                                                                             style={{
                                                                                 whiteSpace: 'nowrap',
                                                                                 overflow: 'hidden',
@@ -1097,7 +1146,6 @@ export const TransitPanel = () => {
                                                                                     return stop.connectingLines.map((connLine, cIdx) => (
                                                                                         <Tooltip key={connLine.id || cIdx} tooltip={`${connLine.name}${connLine.type ? ` (${connLine.type})` : ''}`}>
                                                                                             <span
-                                                                                                title={`${connLine.name} (Click to jump to line)`}
                                                                                                 onClick={(e) => {
                                                                                                     e.stopPropagation();
                                                                                                     handleJumpToLineAndStop(connLine.id, line.type, stop.id);
@@ -1143,7 +1191,6 @@ export const TransitPanel = () => {
                                                                                 {stop.nearbyLines.map((nearbyLine, nIdx) => (
                                                                                     <Tooltip key={nearbyLine.id || nIdx} tooltip={`${nearbyLine.name} (${nearbyLine.type || 'transit'})`}>
                                                                                         <span
-                                                                                            title={`${nearbyLine.name} (${nearbyLine.type || 'transit'}) - Nearby connection (Click to jump)`}
                                                                                             onClick={(e) => {
                                                                                                 e.stopPropagation();
                                                                                                 handleJumpToLineAndStop(nearbyLine.id, nearbyLine.type || 'bus', stop.id);
@@ -1171,13 +1218,17 @@ export const TransitPanel = () => {
                                                                     <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: 'auto', paddingLeft: '10rem' }}>
                                                                         {!line.cargo && (
                                                                             <>
-                                                                                <span style={{ display: 'flex', alignItems: 'center', marginRight: '14rem', color: stop.waiting > 0 ? '#ffffff' : '#888', fontWeight: stop.waiting > 0 ? '600' : 'normal', fontSize: '12rem' }} title="Passengers Waiting">
-                                                                                    <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waiting}</span>
-                                                                                </span>
-                                                                                {stop.waitTime > 0 && (
-                                                                                    <span style={{ display: 'flex', alignItems: 'center', color: '#aaa', fontSize: '12rem' }} title="Average Wait Time">
-                                                                                        <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waitTime}m</span>
+                                                                                <Tooltip tooltip="Passengers Waiting">
+                                                                                    <span style={{ display: 'flex', alignItems: 'center', marginRight: '14rem', color: stop.waiting > 0 ? '#ffffff' : '#888', fontWeight: stop.waiting > 0 ? '600' : 'normal', fontSize: '12rem' }}>
+                                                                                        <PassengerIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waiting}</span>
                                                                                     </span>
+                                                                                </Tooltip>
+                                                                                {stop.waitTime > 0 && (
+                                                                                    <Tooltip tooltip="Average Wait Time">
+                                                                                        <span style={{ display: 'flex', alignItems: 'center', color: '#aaa', fontSize: '12rem' }}>
+                                                                                            <WaitTimeIcon /> <span style={{ marginLeft: '4rem' }}>{stop.waitTime}m</span>
+                                                                                        </span>
+                                                                                    </Tooltip>
                                                                                 )}
                                                                             </>
                                                                         )}
