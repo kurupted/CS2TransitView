@@ -1136,14 +1136,14 @@ export const TransitPanel = () => {
                                                                         </span>
                                                                         {stop.connectingLines && stop.connectingLines.length > 0 && (
                                                                             <div style={{ display: 'flex', alignItems: 'center', marginLeft: '6rem', flexShrink: 0, overflow: 'hidden' }}>
-                                                                                {(() => {
-                                                                                    const count = stop.connectingLines.length;
+                                                                                {stop.connectingLines.map((connLine, cIdx) => {
+                                                                                    const count = stop.connectingLines!.length;
                                                                                     let pillMaxWidth = '105rem';
                                                                                     if (count === 2) pillMaxWidth = '55rem';
                                                                                     else if (count === 3) pillMaxWidth = '36rem';
                                                                                     const isTextlessPill = count >= 4;
 
-                                                                                    return stop.connectingLines.map((connLine, cIdx) => (
+                                                                                    return (
                                                                                         <Tooltip key={connLine.id || cIdx} tooltip={`${connLine.name}${connLine.type ? ` (${connLine.type})` : ''}`}>
                                                                                             <span
                                                                                                 onClick={(e) => {
@@ -1182,8 +1182,8 @@ export const TransitPanel = () => {
                                                                                                 {!isTextlessPill && connLine.name}
                                                                                             </span>
                                                                                         </Tooltip>
-                                                                                    ));
-                                                                                })()}
+                                                                                    );
+                                                                                })}
                                                                             </div>
                                                                         )}
                                                                         {stop.nearbyLines && stop.nearbyLines.length > 0 && (
