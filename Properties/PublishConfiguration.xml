@@ -22,7 +22,7 @@ A more usable Transit Overview for Cities II.
 - As you zoom out, route lines are drawn much thicker, so you can see an overview of routes across your map.
 - Where two or more routes share the same stop, an indicator is drawn with the lines' colors.
 - Where two or more routes overlap, you can still see each line, drawn thinner and alongside each other.
-- Option to show the number of passengers waiting at each stop.
+- When viewing the list of routes, you can expand a route to see its stops, with info on connecting lines, nearby transit stops, and passengers waiting.
 ## Tips:
 - Check out my other mods, Traffic Spy and Radius Delete :) 
 ## Removal:
@@ -35,9 +35,9 @@ This mod is safe to remove and doesn't add data to your save files.
     <!-- Screenshot.  Copied from Screenshots folder.  Include no spaces in file names.  Max file size is 2.1MB.  Can be set multiple times. -->
     <Screenshot Value="Properties\Screenshots\20_main.png" />
     <Screenshot Value="Properties\Screenshots\30_stops1.png" />
-    <Screenshot Value="Properties\Screenshots\31_stops2.png" />
-    <Screenshot Value="Properties\Screenshots\40_waiting.png" />
-    <Screenshot Value="Properties\Screenshots\41_waiting2.png" />
+    <Screenshot Value="Properties\Screenshots\31-stops2.png" />
+    <Screenshot Value="Properties\Screenshots\40_ui.png" />
+    <Screenshot Value="Properties\Screenshots\41_busiest_stops.png" />
     <Screenshot Value="Properties\Screenshots\50_tool.png" />
     <Screenshot Value="Properties\Screenshots\60_cargo.png" />
 

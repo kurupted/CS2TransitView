@@ -6,7 +6,7 @@ A more usable Transit Overview for Cities II.
 - As you zoom out, route lines are drawn much thicker, so you can see an overview of routes across your map.
 - Where two or more routes share the same stop, an indicator is drawn with the lines' colors.
 - Where two or more routes overlap, you can still see each line, drawn thinner and alongside each other.
-- Option to show the number of passengers waiting at each stop.
+- When viewing the list of routes, you can expand a route to see its stops, with info on connecting lines, nearby transit stops, and passengers waiting.
 ## Tips:
 - Check out my other mods, Traffic Spy and Radius Delete :) 
 ## Removal:
