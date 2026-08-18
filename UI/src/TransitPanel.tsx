@@ -269,7 +269,11 @@ export const TransitPanel = () => {
     };
 
     let lines: TransitLine[] = [];
-    try { if (rawData && rawData !== "[]") lines = JSON.parse(rawData); } catch (e) { }
+    try {
+        if (rawData && rawData !== "[]") lines = JSON.parse(rawData);
+    } catch (e) {
+        console.error("[BetterTransitView] Failed to parse transitLinesData JSON:", e, rawData);
+    }
 
     const busiestStops = React.useMemo(() => {
         const map = new Map<number, {
