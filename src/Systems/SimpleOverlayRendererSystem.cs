@@ -23,6 +23,15 @@ namespace BetterTransitView.Systems
         private CameraUpdateSystem m_CameraUpdateSystem; 
         private EntityQuery m_TransitLinesQuery;
 
+        // Persistent Native Containers (Zero allocation per frame)
+        private NativeHashSet<Entity> m_HiddenSet;
+        private NativeParallelMultiHashMap<Entity, UnityEngine.Color> m_StopColors;
+        private NativeHashMap<Entity, float3> m_StopPositions;
+        private NativeParallelMultiHashMap<Entity, Entity> m_SegmentToRouteMap;
+        private NativeParallelMultiHashMap<Entity, UnityEngine.Color> m_WaypointColors;
+        private NativeHashMap<Entity, float3> m_WaypointPositions;
+        private UnityEngine.Camera m_CachedMainCamera;
+
         protected override void OnCreate()
         {
             base.OnCreate();
@@ -42,23 +51,42 @@ namespace BetterTransitView.Systems
                     ComponentType.ReadOnly<Game.Tools.Temp>() // Explicit namespace fix
                 }
             });
+
+            // Initialize persistent containers once
+            m_HiddenSet = new NativeHashSet<Entity>(128, Allocator.Persistent);
+            m_StopColors = new NativeParallelMultiHashMap<Entity, UnityEngine.Color>(30000, Allocator.Persistent);
+            m_StopPositions = new NativeHashMap<Entity, float3>(30000, Allocator.Persistent);
+            m_SegmentToRouteMap = new NativeParallelMultiHashMap<Entity, Entity>(200000, Allocator.Persistent);
+            m_WaypointColors = new NativeParallelMultiHashMap<Entity, UnityEngine.Color>(30000, Allocator.Persistent);
+            m_WaypointPositions = new NativeHashMap<Entity, float3>(30000, Allocator.Persistent);
+        }
+
+        protected override void OnDestroy()
+        {
+            if (m_HiddenSet.IsCreated) m_HiddenSet.Dispose();
+            if (m_StopColors.IsCreated) m_StopColors.Dispose();
+            if (m_StopPositions.IsCreated) m_StopPositions.Dispose();
+            if (m_SegmentToRouteMap.IsCreated) m_SegmentToRouteMap.Dispose();
+            if (m_WaypointColors.IsCreated) m_WaypointColors.Dispose();
+            if (m_WaypointPositions.IsCreated) m_WaypointPositions.Dispose();
+            base.OnDestroy();
         }
 
         protected override void OnUpdate()
         {
             if (_mTransitUISystem == null || !_mTransitUISystem.IsTransitPanelActive) return;
 
-            var hiddenSet = new NativeHashSet<Entity>(TransitUISystem.HiddenCustomRoutes.Count, Allocator.TempJob);
-            foreach (var e in TransitUISystem.HiddenCustomRoutes) hiddenSet.Add(e);
+            // Clear containers for fresh frame
+            m_HiddenSet.Clear();
+            foreach (var e in TransitUISystem.HiddenCustomRoutes) m_HiddenSet.Add(e);
+
+            m_StopColors.Clear();
+            m_StopPositions.Clear();
+            m_SegmentToRouteMap.Clear();
+            m_WaypointColors.Clear();
+            m_WaypointPositions.Clear();
 
             OverlayRenderSystem.Buffer buffer = m_OverlayRenderSystem.GetBuffer(out JobHandle deps);
-            
-            // CONTAINERS
-            var stopColors = new NativeParallelMultiHashMap<Entity, UnityEngine.Color>(30000, Allocator.TempJob);
-            var stopPositions = new NativeHashMap<Entity, float3>(30000, Allocator.TempJob);
-            var segmentToRouteMap = new NativeParallelMultiHashMap<Entity, Entity>(200000, Allocator.TempJob);
-            var waypointColors = new NativeParallelMultiHashMap<Entity, UnityEngine.Color>(30000, Allocator.TempJob);
-            var waypointPositions = new NativeHashMap<Entity, float3>(30000, Allocator.TempJob);
 
             // PASS 1: Tally Shared Segments
             var tallyJob = new TallySharedSegmentsJob
@@ -67,7 +95,7 @@ namespace BetterTransitView.Systems
                 SegmentBufferType = SystemAPI.GetBufferTypeHandle<RouteSegment>(true),
                 PathElementLookup = SystemAPI.GetBufferLookup<PathElement>(true),
                 HiddenRouteType = SystemAPI.GetComponentTypeHandle<HiddenRoute>(true),
-                SegmentToRouteMap = segmentToRouteMap.AsParallelWriter()
+                SegmentToRouteMap = m_SegmentToRouteMap.AsParallelWriter()
             };
             
             JobHandle tallyHandle = tallyJob.ScheduleParallel(m_TransitLinesQuery, Dependency);
@@ -83,7 +111,7 @@ namespace BetterTransitView.Systems
                 CurveLookup = SystemAPI.GetComponentLookup<Curve>(true),
                 PrefabRefLookup = SystemAPI.GetComponentLookup<PrefabRef>(true),
                 TransportLineDataLookup = SystemAPI.GetComponentLookup<TransportLineData>(true),
-                HiddenRoutes = hiddenSet,
+                HiddenRoutes = m_HiddenSet,
                 WaypointBufferType = SystemAPI.GetBufferTypeHandle<Game.Routes.RouteWaypoint>(true),
                 TransformLookup = SystemAPI.GetComponentLookup<Game.Objects.Transform>(true),
                 PositionLookup = SystemAPI.GetComponentLookup<Game.Routes.Position>(true),
@@ -92,11 +120,11 @@ namespace BetterTransitView.Systems
                 TransportStopLookup = SystemAPI.GetComponentLookup<Game.Routes.TransportStop>(true),
                 ZoomLevel = m_CameraUpdateSystem.zoom,
                 
-                StopColors = stopColors,
-                StopPositions = stopPositions,
-                WaypointColors = waypointColors,
-                WaypointPositions = waypointPositions,
-                SharedSegmentsMap = segmentToRouteMap
+                StopColors = m_StopColors,
+                StopPositions = m_StopPositions,
+                WaypointColors = m_WaypointColors,
+                WaypointPositions = m_WaypointPositions,
+                SharedSegmentsMap = m_SegmentToRouteMap
             };
             
             // Schedule Render Job to wait for BOTH the Tally Job AND the Render Buffer
@@ -114,29 +142,36 @@ namespace BetterTransitView.Systems
                     ColorType = SystemAPI.GetComponentTypeHandle<Game.Routes.Color>(true),
                     InterpolatedTransformLookup = SystemAPI.GetComponentLookup<Game.Rendering.InterpolatedTransform>(true),
                     TransformLookup = SystemAPI.GetComponentLookup<Game.Objects.Transform>(true),
-                    HiddenRoutes = hiddenSet,
+                    HiddenRoutes = m_HiddenSet,
                     ZoomLevel = m_CameraUpdateSystem.zoom
                 };
                 vehicleHandle = drawVehiclesJob.Schedule(m_TransitLinesQuery, transitHandle);
             }
 
-            // Grab Camera Data
+            // Grab Camera Data safely without scene-wide GameObject tag search
             float3 camPos = float3.zero;
             float3 camRight = new float3(1, 0, 0);
             float3 camUp = new float3(0, 1, 0);
-            if (UnityEngine.Camera.main != null) 
+            var camera = m_CameraUpdateSystem != null ? m_CameraUpdateSystem.activeCamera : null;
+            if (camera == null)
             {
-                camPos = UnityEngine.Camera.main.transform.position;
-                camRight = UnityEngine.Camera.main.transform.right;
-                camUp = UnityEngine.Camera.main.transform.up;
+                if (m_CachedMainCamera == null) m_CachedMainCamera = UnityEngine.Camera.main;
+                camera = m_CachedMainCamera;
+            }
+            if (camera != null) 
+            {
+                var camTrans = camera.transform;
+                camPos = camTrans.position;
+                camRight = camTrans.right;
+                camUp = camTrans.up;
             }
 
             // PASS 4: Draw Stops SECOND (Writes to buffer, layering ON TOP of vehicles)
             var drawStopsJob = new DrawTransitStopsJob
             {
                 overlayBuffer = buffer,
-                stopColors = stopColors,
-                stopPositions = stopPositions,
+                stopColors = m_StopColors,
+                stopPositions = m_StopPositions,
                 zoomLevel = m_CameraUpdateSystem.zoom,
                 drawStops = TransitUISystem.ShowStopsAndStations,
                 showWaiting = TransitUISystem.ShowWaitingPassengers,
@@ -151,7 +186,7 @@ namespace BetterTransitView.Systems
                 WaitingPassengersLookup = SystemAPI.GetComponentLookup<Game.Routes.WaitingPassengers>(true),
                 OwnerLookup = SystemAPI.GetComponentLookup<Game.Common.Owner>(true),
                 ColorLookup = SystemAPI.GetComponentLookup<Game.Routes.Color>(true),
-                HiddenRoutes = hiddenSet
+                HiddenRoutes = m_HiddenSet
             };
 
             JobHandle drawStopsHandle = drawStopsJob.Schedule(vehicleHandle);
@@ -160,25 +195,15 @@ namespace BetterTransitView.Systems
             var drawWaypointsJob = new DrawTransitWaypointsJob
             {
                 overlayBuffer = buffer,
-                waypointColors = waypointColors,
-                waypointPositions = waypointPositions,
+                waypointColors = m_WaypointColors,
+                waypointPositions = m_WaypointPositions,
                 zoomLevel = m_CameraUpdateSystem.zoom
             };
             
             JobHandle waypointsHandle = drawWaypointsJob.Schedule(drawStopsHandle);
 
             // The final dependency
-            JobHandle finalDeps = waypointsHandle;
-            
-            // CLEANUP: Dispose of everything safely using the job handles that finished using them
-            segmentToRouteMap.Dispose(transitHandle); 
-            hiddenSet.Dispose(finalDeps);
-            stopColors.Dispose(drawStopsHandle);
-            stopPositions.Dispose(drawStopsHandle);
-            waypointColors.Dispose(waypointsHandle);
-            waypointPositions.Dispose(waypointsHandle);
-
-            Dependency = finalDeps;
+            Dependency = waypointsHandle;
             m_OverlayRenderSystem.AddBufferWriter(Dependency);
         }
 

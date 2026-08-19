@@ -55,6 +55,11 @@ namespace BetterTransitView.Systems
         private bool m_HasInitializedDefaults = false;
         private HashSet<Entity> m_SavedHiddenRoutes = new HashSet<Entity>();
 
+        // Reusable Buffers for Zero-Allocation JSON Generation
+        private readonly System.Text.StringBuilder m_JsonBuffer = new System.Text.StringBuilder(131072);
+        private readonly Dictionary<int, RouteHeader> m_ConnectedRoutesBuffer = new Dictionary<int, RouteHeader>(64);
+        private readonly Dictionary<int, RouteHeader> m_NearbyRoutesBuffer = new Dictionary<int, RouteHeader>(64);
+
         // Public Statics for the Render Jobs
         public static HashSet<Entity> HiddenCustomRoutes = new HashSet<Entity>();
         public static bool ShowStopsAndStations = true; 
@@ -397,11 +402,19 @@ namespace BetterTransitView.Systems
             // 3. Transit Panel Logic Loop
             if (this.IsTransitPanelActive)
             {
-                SyncVanillaVisibilityToUI();
+                m_TransitUpdateFrame++;
 
-                // Keep the Gray Map checkbox synced if the user manually closes the vanilla infoview
-                // But, pause the sync logic if we are actively enforcing the infoview state (ie trying to prevent vanilla view after we click Tool)
-                if (m_EnforceInfoviewFrames == 0 && m_CustomInfoviewEntity != Entity.Null)
+                // Stagger background tasks across different frames (1s interval, 20-frame offset)
+                // or run immediately when a user interaction trips the dirty flag.
+
+                // 1. Sync vanilla visibility (Frame offset: 20)
+                if (m_TransitUpdateFrame % 60 == 20 || m_TransitLinesDirty)
+                {
+                    SyncVanillaVisibilityToUI();
+                }
+
+                // 2. Keep Gray Map checkbox synced (Frame offset: 40)
+                if (m_EnforceInfoviewFrames == 0 && m_CustomInfoviewEntity != Entity.Null && (m_TransitUpdateFrame % 60 == 40 || m_TransitLinesDirty))
                 {
                     bool isActuallyGray = false;
                     
@@ -427,8 +440,7 @@ namespace BetterTransitView.Systems
                     }
                 }
                 
-                m_TransitUpdateFrame++;
-                // Update data every 60 frames OR instantly if the dirty flag was tripped by a click
+                // 3. Update transit lines JSON data (Frame offset: 0)
                 if (m_TransitUpdateFrame % 60 == 0 || m_TransitLinesDirty) 
                 {
                     UpdateTransitLinesData();
@@ -458,8 +470,9 @@ namespace BetterTransitView.Systems
             float minDistanceSq = float.MaxValue;
             int closestRouteIndex = 0;
 
-            var segmentToRouteMap = new Unity.Collections.NativeParallelMultiHashMap<Entity, Entity>(200000, Unity.Collections.Allocator.Temp);
+            using var segmentToRouteMap = new Unity.Collections.NativeParallelMultiHashMap<Entity, Entity>(200000, Unity.Collections.Allocator.Temp);
             using var routeEntities = m_TransitLinesQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+            using var uniqueRoutes = new Unity.Collections.NativeList<Entity>(16, Unity.Collections.Allocator.Temp);
             
             var segmentBufferLookup = GetBufferLookup<Game.Routes.RouteSegment>(true);
             var pathElementLookup = GetBufferLookup<Game.Pathfind.PathElement>(true);
@@ -501,7 +514,7 @@ namespace BetterTransitView.Systems
                                 if (curveLookup.TryGetComponent(element.m_Target, out var curveComponent))
                                 {
                                     var myCurve = curveComponent.m_Bezier;
-                                    var uniqueRoutes = new Unity.Collections.NativeList<Entity>(16, Unity.Collections.Allocator.Temp);
+                                    uniqueRoutes.Clear();
                                     if (segmentToRouteMap.TryGetFirstValue(element.m_Target, out Entity routeOnSegment, out var iterator))
                                     {
                                         do
@@ -535,7 +548,6 @@ namespace BetterTransitView.Systems
                                         myCurve.c += rightMid * offsetAmount;
                                         myCurve.d += rightD * offsetAmount;
                                     }
-                                    uniqueRoutes.Dispose();
 
                                     // Check distance
                                     for (float t = 0f; t <= 1.0f; t += 0.1f)
@@ -556,8 +568,6 @@ namespace BetterTransitView.Systems
                 }
             }
 
-            segmentToRouteMap.Dispose();
-            
             // Threshold: Ribbon max thickness is ~48, so we check distance up to ~50 meters
             if (minDistanceSq <= 2500f)
             {
@@ -566,13 +576,13 @@ namespace BetterTransitView.Systems
             return 0;
         }
 
-        
         private struct RouteHeader
         {
             public int id;
             public string name;
             public string color;
             public string type;
+            public string cachedJson;
         }
 
         private struct CollectedStop
@@ -609,7 +619,43 @@ namespace BetterTransitView.Systems
         private static string EscapeJson(string s)
         {
             if (string.IsNullOrEmpty(s)) return "";
-            var sb = new System.Text.StringBuilder(s.Length + 10);
+            bool needsEscape = false;
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+                if (c == '\\' || c == '"' || c < 32)
+                {
+                    needsEscape = true;
+                    break;
+                }
+            }
+            if (!needsEscape) return s;
+
+            var sb = new System.Text.StringBuilder(s.Length + 8);
+            AppendEscapedJson(sb, s);
+            return sb.ToString();
+        }
+
+        private static void AppendEscapedJson(System.Text.StringBuilder sb, string s)
+        {
+            if (string.IsNullOrEmpty(s)) return;
+            bool needsEscape = false;
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+                if (c == '\\' || c == '"' || c < 32)
+                {
+                    needsEscape = true;
+                    break;
+                }
+            }
+
+            if (!needsEscape)
+            {
+                sb.Append(s);
+                return;
+            }
+
             for (int i = 0; i < s.Length; i++)
             {
                 char c = s[i];
@@ -634,7 +680,6 @@ namespace BetterTransitView.Systems
                         break;
                 }
             }
-            return sb.ToString();
         }
 
         private static float SanitizeFloat(float value, float fallback = 0f)
@@ -710,12 +755,14 @@ namespace BetterTransitView.Systems
 
                         string colorHex = string.Format("#{0:X2}{1:X2}{2:X2}", colorComp.m_Color.r, colorComp.m_Color.g, colorComp.m_Color.b);
 
+                        string escapedRouteName = EscapeJson(name);
                         var routeHeader = new RouteHeader
                         {
                             id = entity.Index,
                             name = name,
                             color = colorHex,
-                            type = type
+                            type = type,
+                            cachedJson = $"{{\"id\": {entity.Index}, \"name\": \"{escapedRouteName}\", \"color\": \"{colorHex}\", \"type\": \"{type}\"}}"
                         };
 
                         int cargo = 0;
@@ -905,8 +952,8 @@ namespace BetterTransitView.Systems
                 // ==========================================
                 // PASS 2: Assemble High-Performance JSON
                 // ==========================================
-                var result = new System.Text.StringBuilder(collectedLines.Count * 256 + 16);
-                result.Append("[");
+                m_JsonBuffer.Clear();
+                m_JsonBuffer.Append('[');
                 bool first = true;
 
                 for (int i = 0; i < collectedLines.Count; i++)
@@ -914,51 +961,59 @@ namespace BetterTransitView.Systems
                     var line = collectedLines[i];
                     try
                     {
-                        var stopsJson = new System.Text.StringBuilder(line.stops.Count * 128 + 16);
-                        stopsJson.Append("[");
-                        bool firstStop = true;
+                        if (!first) m_JsonBuffer.Append(',');
+                        first = false;
+
+                        m_JsonBuffer.Append("{\"id\":").Append(line.entity.Index)
+                                    .Append(",\"type\":\"").Append(line.type)
+                                    .Append("\",\"name\":\"");
+                        AppendEscapedJson(m_JsonBuffer, line.name);
+                        m_JsonBuffer.Append("\",\"color\":\"").Append(line.colorHex)
+                                    .Append("\",\"vehicles\":").Append(line.vehicles)
+                                    .Append(",\"isDispatching\":").Append(line.isDispatching ? "true" : "false")
+                                    .Append(",\"hasShortage\":").Append(line.hasShortage ? "true" : "false")
+                                    .Append(",\"passengers\":").Append(line.passengers)
+                                    .Append(",\"waitingPassengers\":").Append(line.waitingPassengers)
+                                    .Append(",\"avgWaitTime\":").Append(line.avgWaitTime)
+                                    .Append(",\"length\":\"").Append(line.lengthStr)
+                                    .Append("\",\"lengthRaw\":").Append(line.lengthRaw.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                                    .Append(",\"usage\":").Append(line.usage)
+                                    .Append(",\"cargo\":").Append(line.isCargo ? "true" : "false")
+                                    .Append(",\"visible\":").Append(line.isVisible ? "true" : "false")
+                                    .Append(",\"stops\":").Append(line.stops.Count)
+                                    .Append(",\"stopList\":[");
 
                         for (int s = 0; s < line.stops.Count; s++)
                         {
                             var stop = line.stops[s];
+                            if (s > 0) m_JsonBuffer.Append(',');
 
                             // Direct Connected Lines
-                            var connectedRoutes = new Dictionary<int, RouteHeader>();
+                            m_ConnectedRoutesBuffer.Clear();
                             if (targetToRoutes.TryGetValue(stop.wp, out var wpRoutes))
                             {
                                 for (int r = 0; r < wpRoutes.Count; r++)
                                 {
-                                    if (wpRoutes[r].id != line.entity.Index) connectedRoutes[wpRoutes[r].id] = wpRoutes[r];
+                                    if (wpRoutes[r].id != line.entity.Index) m_ConnectedRoutesBuffer[wpRoutes[r].id] = wpRoutes[r];
                                 }
                             }
                             if (stop.stopTarget != Entity.Null && stop.stopTarget != stop.wp && targetToRoutes.TryGetValue(stop.stopTarget, out var targetRoutes))
                             {
                                 for (int r = 0; r < targetRoutes.Count; r++)
                                 {
-                                    if (targetRoutes[r].id != line.entity.Index) connectedRoutes[targetRoutes[r].id] = targetRoutes[r];
+                                    if (targetRoutes[r].id != line.entity.Index) m_ConnectedRoutesBuffer[targetRoutes[r].id] = targetRoutes[r];
                                 }
                             }
                             if (stop.stationBuilding != Entity.Null && stationToRoutes.TryGetValue((stop.stationBuilding, line.type), out var stationRoutes))
                             {
                                 for (int r = 0; r < stationRoutes.Count; r++)
                                 {
-                                    if (stationRoutes[r].id != line.entity.Index) connectedRoutes[stationRoutes[r].id] = stationRoutes[r];
+                                    if (stationRoutes[r].id != line.entity.Index) m_ConnectedRoutesBuffer[stationRoutes[r].id] = stationRoutes[r];
                                 }
                             }
 
-                            var connLinesJson = new System.Text.StringBuilder("[");
-                            bool firstConn = true;
-                            foreach (var kvp in connectedRoutes)
-                            {
-                                var r = kvp.Value;
-                                if (!firstConn) connLinesJson.Append(",");
-                                connLinesJson.Append($"{{\"id\": {r.id}, \"name\": \"{EscapeJson(r.name)}\", \"color\": \"{EscapeJson(r.color)}\", \"type\": \"{EscapeJson(r.type)}\"}}");
-                                firstConn = false;
-                            }
-                            connLinesJson.Append("]");
-
                             // Nearby Lines (within 120m)
-                            var nearbyRoutes = new Dictionary<int, RouteHeader>();
+                            m_NearbyRoutesBuffer.Clear();
                             if (!stop.position.Equals(Unity.Mathematics.float3.zero))
                             {
                                 int cellX = (int)System.Math.Floor(stop.position.x / 128f);
@@ -975,8 +1030,8 @@ namespace BetterTransitView.Systems
                                             {
                                                 var cand = candidateStops[c];
                                                 if (cand.route.id == line.entity.Index) continue;
-                                                if (connectedRoutes.ContainsKey(cand.route.id)) continue;
-                                                if (nearbyRoutes.ContainsKey(cand.route.id)) continue;
+                                                if (m_ConnectedRoutesBuffer.ContainsKey(cand.route.id)) continue;
+                                                if (m_NearbyRoutesBuffer.ContainsKey(cand.route.id)) continue;
 
                                                 float distSq = Unity.Mathematics.math.distancesq(
                                                     new Unity.Mathematics.float2(stop.position.x, stop.position.z),
@@ -984,7 +1039,7 @@ namespace BetterTransitView.Systems
                                                 );
                                                 if (distSq <= 14400.0f) // 120m
                                                 {
-                                                    nearbyRoutes[cand.route.id] = cand.route;
+                                                    m_NearbyRoutesBuffer[cand.route.id] = cand.route;
                                                 }
                                             }
                                         }
@@ -992,26 +1047,36 @@ namespace BetterTransitView.Systems
                                 }
                             }
 
-                            var nearbyLinesJson = new System.Text.StringBuilder("[");
-                            bool firstNearby = true;
-                            foreach (var kvp in nearbyRoutes)
+                            m_JsonBuffer.Append("{\"id\":").Append(stop.wp.Index)
+                                        .Append(",\"targetId\":").Append(stop.stopTarget.Index)
+                                        .Append(",\"name\":\"");
+                            AppendEscapedJson(m_JsonBuffer, stop.name);
+                            m_JsonBuffer.Append("\",\"waiting\":").Append(stop.waiting)
+                                        .Append(",\"waitTime\":").Append(stop.waitTime)
+                                        .Append(",\"connectingLines\":[");
+
+                            bool firstConn = true;
+                            foreach (var kvp in m_ConnectedRoutesBuffer)
                             {
-                                var r = kvp.Value;
-                                if (!firstNearby) nearbyLinesJson.Append(",");
-                                nearbyLinesJson.Append($"{{\"id\": {r.id}, \"name\": \"{EscapeJson(r.name)}\", \"color\": \"{EscapeJson(r.color)}\", \"type\": \"{EscapeJson(r.type)}\"}}");
+                                if (!firstConn) m_JsonBuffer.Append(',');
+                                m_JsonBuffer.Append(kvp.Value.cachedJson);
+                                firstConn = false;
+                            }
+
+                            m_JsonBuffer.Append("],\"nearbyLines\":[");
+
+                            bool firstNearby = true;
+                            foreach (var kvp in m_NearbyRoutesBuffer)
+                            {
+                                if (!firstNearby) m_JsonBuffer.Append(',');
+                                m_JsonBuffer.Append(kvp.Value.cachedJson);
                                 firstNearby = false;
                             }
-                            nearbyLinesJson.Append("]");
 
-                            if (!firstStop) stopsJson.Append(",");
-                            stopsJson.Append($"{{\"id\": {stop.wp.Index}, \"targetId\": {stop.stopTarget.Index}, \"name\": \"{EscapeJson(stop.name)}\", \"waiting\": {stop.waiting}, \"waitTime\": {stop.waitTime}, \"connectingLines\": {connLinesJson.ToString()}, \"nearbyLines\": {nearbyLinesJson.ToString()}}}");
-                            firstStop = false;
+                            m_JsonBuffer.Append("]}");
                         }
-                        stopsJson.Append("]");
 
-                        if (!first) result.Append(",");
-                        result.Append($"{{\"id\": {line.entity.Index}, \"type\": \"{EscapeJson(line.type)}\", \"name\": \"{EscapeJson(line.name)}\", \"color\": \"{EscapeJson(line.colorHex)}\", \"vehicles\": {line.vehicles}, \"isDispatching\": {line.isDispatching.ToString().ToLower()}, \"hasShortage\": {line.hasShortage.ToString().ToLower()}, \"passengers\": {line.passengers}, \"waitingPassengers\": {line.waitingPassengers}, \"avgWaitTime\": {line.avgWaitTime}, \"length\": \"{EscapeJson(line.lengthStr)}\", \"lengthRaw\": {line.lengthRaw.ToString(System.Globalization.CultureInfo.InvariantCulture)}, \"usage\": {line.usage}, \"cargo\": {line.isCargo.ToString().ToLower()}, \"visible\": {line.isVisible.ToString().ToLower()}, \"stops\": {line.stops.Count}, \"stopList\": {stopsJson.ToString()} }}");
-                        first = false;
+                        m_JsonBuffer.Append("]}");
                     }
                     catch (System.Exception lineJsonEx)
                     {
@@ -1019,8 +1084,8 @@ namespace BetterTransitView.Systems
                     }
                 }
 
-                result.Append("]");
-                this.transitLinesDataBinding.Update(result.ToString());
+                m_JsonBuffer.Append(']');
+                this.transitLinesDataBinding.Update(m_JsonBuffer.ToString());
             }
             catch (System.Exception ex)
             {

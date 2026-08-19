@@ -1,2 +1,1 @@
-- Performance improvements.
-- Better error handling.
+- More performance improvements.
